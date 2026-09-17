@@ -1,0 +1,28 @@
+SIN5013 | Caderno interativo de estudo
+
+Abra SIN5013-estudo.html no navegador. Não requer instalação, servidor ou internet.
+O HTML contém as 274 páginas originais incorporadas, além das explicações, figuras comentadas, algoritmos, exercícios, soluções e laboratórios.
+As referências de cada assunto abrem as páginas dentro do HTML. Use “Aulas originais no HTML” para consultar qualquer página das oito aulas.
+Você pode copiar somente o HTML: as imagens não dependem da pasta fontes, de servidor ou de internet.
+Os PDFs originais também acompanham o pacote como cópias opcionais.
+
+Use o mapa de cobertura para relacionar tópicos, páginas e desafios.
+Comece pela Preparação: vetores, pseudocódigo, funções, logaritmos, somas e provas.
+Depois siga as oito aulas em ordem. Cada seção explica os termos e desenvolve um exemplo antes dos desafios.
+Aprofundamentos opcionais ficam separados da prática principal.
+Esta revisão mantém os identificadores dos exercícios anteriores para preservar seus registros.
+As soluções começam fechadas. Dicas também são opcionais.
+Marque “Resolvi sem ajuda” somente depois de refazer a questão sem consultar.
+Progresso e anotações são guardados no armazenamento local deste navegador, quando permitido.
+Use Exportar progresso para guardar uma cópia JSON e Importar para restaurá-la em outro navegador.
+Abrir outro caminho/cópia do arquivo pode criar um armazenamento separado.
+
+pratica.py contém implementações de referência com verificações (Python 3, sem dependências).
+Execute: python pratica.py
+Tente os desafios antes de consultar esse arquivo.
+
+Fontes: aulas 02,03,04,05,06,07,09,10 de Norton T. Roman e Luciano A. Digiampietri (2023).
+São oito arquivos, 274 páginas. Aulas não fornecidas não integram este escopo.
+As explicações, exercícios adicionais, resoluções e ferramentas foram elaborados para este caderno.
+Erratas e hipóteses adotadas estão explicitadas nos tópicos e na seção Referência.
+Cobertura de conteúdo não equivale a garantia automática de aprendizagem.
