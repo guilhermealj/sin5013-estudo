@@ -8,6 +8,7 @@ publicado em **https://guilhermealj.github.io/sin5013-estudo/**
 | Arquivo | Descrição |
 | --- | --- |
 | `SIN5013-estudo.html` | Caderno completo: teoria, demonstrações, 113 desafios resolvidos, laboratórios interativos e as 274 páginas originais embutidas. Arquivo único e autocontido (~22 MB), sem dependências externas. |
+| `SIN5013-caderno-pratico-v2.html` | Caderno prático: 49 exercícios com resolução passo a passo, dois simulados e plano de estudo, com modo escuro. Arquivo único (~0,9 MB). Publicado em https://guilhermealj.github.io/sin5013-estudo/SIN5013-caderno-pratico-v2.html |
 | `pratica.py` | Implementações de referência com verificações. Python 3, sem dependências. Execute com `python pratica.py`. |
 | `exercicios-extras-ate-big-o.md` | Exercícios adicionais até notação assintótica. |
 | `gabarito-extras-ate-big-o.md` | Gabarito dos exercícios adicionais. |
