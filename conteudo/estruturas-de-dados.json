@@ -1,0 +1,3379 @@
+{
+  "schema_version": 1,
+  "id": "sin5013-estruturas",
+  "title": "Estruturas de dados",
+  "subtitle": "Listas, árvores e grafos · SIN5013 · Parte 2",
+  "storage_key": "sin5013-estruturas-v1",
+  "filename": "SIN5013-estruturas-de-dados.html",
+  "reference_notebook": "SIN5013-estudo.html",
+  "reference_url": "https://guilhermealj.github.io/sin5013-estudo/SIN5013-estudo.html",
+  "course_url": "https://www.each.usp.br/digiampietri/SIN5013/",
+  "chapters": [
+    {
+      "id": "00",
+      "title": "Preparação: memória e contratos",
+      "intro": "Retome a leitura de C e transforme cada operação em uma mudança controlada de estado. Use as contagens estudadas na primeira parte para justificar os custos.",
+      "topics": [
+        {
+          "id": "memoria",
+          "title": "Valores, endereços e ponteiros",
+          "objective": "Rastrear alterações por valor, por ponteiro e por ponteiro para ponteiro.",
+          "sections": [
+            [
+              "Desenhe caixas e setas",
+              [
+                "Uma variável guarda um valor em um endereço. &x é o endereço de x; se p=&x, *p acessa o valor de x. Em um ponteiro para registro, p->chave equivale a (*p).chave. O endereço não é a chave armazenada.",
+                "Chamaremos de NO um tipo de registro (struct) que representa um nó. C passa todos os argumentos por valor. Uma função que recebe NO n ganha uma cópia do registro; uma que recebe NO *p ganha uma cópia do endereço, mas pode alterar o objeto apontado. Reatribuir p não muda o ponteiro do chamador."
+              ]
+            ],
+            [
+              "Quando usar dois níveis",
+              [
+                "Se a função deve trocar a raiz ou o início da estrutura no chamador, receba NO **raiz e atribua *raiz=novo. Passar LISTA por valor copia seus campos; se um campo aponta para um nó-cabeça, os nós continuam compartilhados, embora o campo copiado não seja o original.",
+                "malloc reserva memória; confira o retorno antes de usar. free libera um bloco alocado dinamicamente. Guarde o próximo endereço antes de liberar um nó e nunca leia seus campos depois. NULL representa ausência de objeto, não uma chave especial."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: mudar o objeto ou a variável",
+            [
+              "Comece com int a=5,b=9; int *p=&a;. Execute *p=7: a passa a 7. Execute p=&b: a continua 7 e p agora aponta para b.",
+              "Uma função que recebe int *q e apenas reatribui q a outro endereço válido não troca p no chamador. Para trocar p, a função precisa receber int **q (o endereço de p) e atribuir o novo endereço a *q."
+            ]
+          ],
+          "invariant": "Antes de desreferenciar, o ponteiro deve apontar para um objeto vivo do tipo correto.",
+          "cost": "Copiar ou seguir um ponteiro custa O(1) no modelo usado; percorrer n nós custa O(n).",
+          "caution": "Endereços numéricos nas provas são rótulos didáticos. Não some endereços de nós como se formassem um vetor.",
+          "sources": [
+            {
+              "source": "prova-listas",
+              "pages": "1–4",
+              "preview": [
+                2
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "O que realmente muda?",
+              "kind": "Rastreamento",
+              "prompt": "Comece com a=4, b=7, p=&a. Execute *p=9; p=&b; *p=*p+1. Dê a, b e o alvo de p.",
+              "hint": "Separe o valor de p do conteúdo de *p.",
+              "steps": [
+                "*p=9 altera a para 9.",
+                "p=&b muda a seta, sem alterar a.",
+                "A última atribuição lê b=7 e grava 8. Resultado: a=9, b=8, p aponta para b."
+              ],
+              "answer_code": "",
+              "exam": "prova-listas · questões 1 e 2",
+              "id": "ED-001",
+              "topic": "memoria",
+              "chapter": "00"
+            },
+            {
+              "title": "Cópia de uma estrutura com ponteiro",
+              "kind": "Justificativa",
+              "prompt": "LISTA contém somente NO *cabeca, criado antes da chamada. Explique por que excluir um nó válido pode funcionar com LISTA l por valor, mas inicializar o campo cabeca do chamador não.",
+              "hint": "Desenhe duas caixas cabeca apontando para o mesmo nó.",
+              "steps": [
+                "A cópia l.cabeca contém o mesmo endereço; mudar os campos dos nós alcançáveis muda objetos compartilhados.",
+                "Atribuir l.cabeca=novo só altera o campo da cópia local. Para inicializar o campo no chamador, receba LISTA *l.",
+                "A exclusão pressupõe que o nó-cabeça permanece vivo e que a função não precisa trocar esse campo."
+              ],
+              "answer_code": "",
+              "exam": "prova-listas · questão 4",
+              "id": "ED-002",
+              "topic": "memoria",
+              "chapter": "00"
+            },
+            {
+              "title": "Trocar o início",
+              "kind": "Código",
+              "prompt": "NO tem int chave e NO *prox. Complete uma função que remova o primeiro nó de uma lista simples, copie a chave em *saida e devolva 1; devolva 0 se vazia. Receba NO **inicio. Assuma argumentos válidos.",
+              "hint": "Guarde a vítima e seu sucessor antes de chamar free.",
+              "steps": [
+                "A verificação de vazio ocorre antes de qualquer acesso ao nó.",
+                "Copie o dado e altere o início no chamador.",
+                "Libere somente a vítima. O restante da lista continua alcançável."
+              ],
+              "answer_code": "int retiraPrimeiro(NO **inicio, int *saida) {\n    NO *vitima = *inicio;\n    if (!vitima) return 0;\n    *saida = vitima->chave;\n    *inicio = vitima->prox;\n    free(vitima);\n    return 1;\n}",
+              "exam": "",
+              "id": "ED-003",
+              "topic": "memoria",
+              "chapter": "00"
+            }
+          ],
+          "code": "#include <stddef.h>\ntypedef struct no {\n    int chave;\n    struct no *prox;\n} NO;\n/* Dentro de uma função: */\n/* NO n = {5, NULL}; NO *p = &n; p->chave = 7; */",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "contratos",
+          "title": "Operações, invariantes e custo",
+          "objective": "Explicar o estado válido antes e depois de cada operação.",
+          "sections": [
+            [
+              "A representação precisa de um contrato",
+              [
+                "Um tipo abstrato descreve operações e seus efeitos; a representação escolhe campos e memória. Uma pilha pode usar vetor ou nós e continuar obedecendo à regra de retirar o último inserido.",
+                "Invariante é uma condição que toda operação pública preserva. Em um vetor com n elementos válidos e capacidade C, 0≤n≤C e os elementos válidos estão em A[0..n−1]. A posição A[n] não é automaticamente um elemento válido."
+              ]
+            ],
+            [
+              "Analise o que a operação recebe",
+              [
+                "Inserir depois de um nó conhecido exige poucas ligações. Encontrar antes o nó pode exigir percorrer a lista. A resposta de custo deve incluir todas as fases pedidas.",
+                "Descreva entradas inválidas, vazio, um elemento, capacidade cheia, chave ausente e duplicatas. Um algoritmo que trata apenas o caso do meio ainda não implementa a operação inteira. Ao falar em espaço, diferencie memória da estrutura de memória auxiliar da operação."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: excluir a chave 8",
+            [
+              "Na lista 2→5→8→11, a busca examina três nós até 8. Depois, ligar 5 diretamente a 11 custa tempo constante.",
+              "A operação completa é O(n) no pior caso por causa da busca; a religação, isoladamente, é O(1). A lista armazenada continua ocupando O(n) e a função usa O(1) espaço auxiliar."
+            ]
+          ],
+          "invariant": "Dê a pré-condição, explique cada mudança e confira o invariante no retorno.",
+          "cost": "Custos das estruturas serão expressos em n; grafos usarão V vértices e E arestas.",
+          "caution": "O(1) para uma religação não transforma uma busca sequencial em O(1).",
+          "sources": [
+            {
+              "source": "lineares",
+              "pages": "2–9 e 35–42",
+              "preview": [
+                4
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Localizar não é religar",
+              "kind": "Complexidade",
+              "prompt": "Uma lista simples não ordenada possui apenas inicio. Qual o pior custo para excluir uma chave e qual o custo para excluir o nó seguinte a um predecessor já fornecido?",
+              "hint": "Diferencie a informação disponível nas duas chamadas.",
+              "steps": [
+                "Excluir por chave requer localizar o nó e o predecessor: O(n).",
+                "Com predecessor fornecido e sucessor existente, duas ou três atribuições e free bastam: O(1).",
+                "Se a API também exige recalcular tamanho por percurso, esse trabalho precisa ser acrescentado."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-004",
+              "topic": "contratos",
+              "chapter": "00"
+            },
+            {
+              "title": "Faça os casos aparecerem",
+              "kind": "Invariante",
+              "prompt": "Uma fila dinâmica tem inicio e fim. Qual condição deve valer na fila vazia? Que campo costuma ficar errado ao retirar seu único elemento?",
+              "hint": "Depois da remoção não deve restar ponteiro para memória liberada.",
+              "steps": [
+                "Vazia implica inicio=NULL e fim=NULL.",
+                "Retirar o único nó faz inicio receber NULL.",
+                "Também é necessário fazer fim=NULL antes de reutilizar a estrutura."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-005",
+              "topic": "contratos",
+              "chapter": "00"
+            },
+            {
+              "title": "Uma função com promessa errada",
+              "kind": "Justificativa",
+              "prompt": "Uma busca binária é aplicada a A=[8,2,7,4]. A função promete encontrar qualquer chave presente. Indique a pré-condição que falta e dê um possível erro.",
+              "hint": "A escolha da metade depende da ordenação.",
+              "steps": [
+                "A pré-condição é que os elementos estejam ordenados pelo mesmo critério da busca.",
+                "Procurar 8 com meio inicial em índice 1 encontra 2 e descarta a metade esquerda, que contém 8.",
+                "Ser uma lista sequencial não garante a ordenação."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-006",
+              "topic": "contratos",
+              "chapter": "00"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        }
+      ]
+    },
+    {
+      "id": "01",
+      "title": "Listas: ordem e ligações",
+      "intro": "Compare listas sequenciais e ligadas e aprenda a preservar seus contratos durante inserções e exclusões.",
+      "topics": [
+        {
+          "id": "sequencial",
+          "title": "Lista sequencial ordenada e sentinela",
+          "objective": "Rastrear deslocamentos, busca binária e o espaço reservado à sentinela.",
+          "sections": [
+            [
+              "Vizinhança física e ordem lógica",
+              [
+                "Na lista sequencial, elementos consecutivos ocupam posições consecutivas. Em uma lista ordenada, inserir 6 em [2,5,9] exige abrir espaço antes de 9. A busca pode ser binária, mas inserir continua exigindo deslocamentos.",
+                "Na exclusão da posição i, copie A[i+1..n−1] uma posição à esquerda e reduza n. O valor que sobra fora do trecho válido não conta como elemento."
+              ]
+            ],
+            [
+              "Sentinela não é dado do usuário",
+              [
+                "A busca por sentinela grava a chave buscada em A[n] e percorre até achar igualdade. Se parar em n, a chave não está entre os dados válidos.",
+                "O vetor deve reservar C+1 posições para uma capacidade lógica C. A posição extra garante a busca quando a lista está cheia. O contrato de inserção continua limitando n a C, e a sentinela não aumenta n."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: inserir e retirar",
+            [
+              "Comece com A=[2,5,9], n=3. Para inserir 6, copie 9 de A[2] para A[3], grave 6 em A[2] e faça n=4.",
+              "Para excluir 5, localize o índice 1; copie 6 e 9 para os índices 1 e 2 e faça n=3. O trecho válido fica [2,6,9]."
+            ]
+          ],
+          "invariant": "A[0..n−1] está ordenado e 0≤n≤C. A[C] pode ser reservada à sentinela.",
+          "cost": "Busca binária O(log n); busca sequencial O(n); inserir e excluir O(n) no pior caso; acesso por índice O(1).",
+          "caution": "Busca binária retorna uma posição; ainda é preciso mover os elementos ao excluir.",
+          "sources": [
+            {
+              "source": "lineares",
+              "pages": "6–26",
+              "preview": [
+                19
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Conte os deslocamentos",
+              "kind": "Rastreamento",
+              "prompt": "Em [1,4,7,9], insira 5 mantendo a ordem. Depois exclua 1. Dê o vetor válido e o número de deslocamentos de cada operação.",
+              "hint": "Conte cópias de elementos existentes; não conte a gravação da chave nova.",
+              "steps": [
+                "Para inserir 5, mova 9 e 7: dois deslocamentos. O vetor vira [1,4,5,7,9].",
+                "Para excluir 1, mova 4,5,7,9: quatro deslocamentos.",
+                "Resultado válido: [4,5,7,9]."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-007",
+              "topic": "sequencial",
+              "chapter": "01"
+            },
+            {
+              "title": "A posição extra",
+              "kind": "Invariante",
+              "prompt": "Capacidade lógica C=4, n=4, vetor físico com quatro posições. A busca grava A[n]=ch. Identifique o erro e a correção.",
+              "hint": "Os índices físicos válidos começam em zero.",
+              "steps": [
+                "A[4] está fora do vetor físico, cujos índices vão de 0 a 3.",
+                "Reserve cinco posições para dados+sentinela.",
+                "Não aumente a capacidade lógica: quatro elementos válidos continuam sendo o máximo."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-008",
+              "topic": "sequencial",
+              "chapter": "01"
+            },
+            {
+              "title": "Inserção com contrato",
+              "kind": "Código",
+              "prompt": "Escreva insere(A,&n,C,x) para um vetor ordenado crescente, permitindo chaves iguais. A tem pelo menos C posições. Retorne 0 se cheio.",
+              "hint": "Desloque do fim para o início para não apagar um valor que ainda precisa copiar.",
+              "steps": [
+                "Confira a capacidade antes de escrever.",
+                "Mova apenas valores maiores que x.",
+                "Grave x e atualize a contagem. A política permite duplicatas."
+              ],
+              "answer_code": "int insere(int A[], int *n, int C, int x) {\n    if (*n >= C) return 0;\n    int i = *n;\n    while (i > 0 && A[i-1] > x) {\n        A[i] = A[i-1];\n        --i;\n    }\n    A[i] = x;\n    ++*n;\n    return 1;\n}",
+              "exam": "",
+              "id": "ED-009",
+              "topic": "sequencial",
+              "chapter": "01"
+            }
+          ],
+          "code": "/* Busca com sentinela: A possui C+1 posições, 0 <= n <= C. */\nint buscaSentinela(int A[], int n, int chave) {\n    A[n] = chave;\n    int i = 0;\n    while (A[i] != chave) ++i;\n    return i == n ? -1 : i;\n}",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "ligada",
+          "title": "Lista simples: predecessor e sucessor",
+          "objective": "Inserir e remover sem perder acesso ao restante da lista.",
+          "sections": [
+            [
+              "A ordem está nas setas",
+              [
+                "Cada nó contém o registro e um ponteiro prox. A lista guarda inicio; NULL marca o fim. Nós vizinhos podem estar em endereços distantes. Avançar para o índice k requer seguir k ponteiros, sem o acesso direto de um vetor.",
+                "Para inserir antes de atual, localize também ant. Faça novo->prox=atual; depois faça ant->prox=novo, ou troque inicio se ant=NULL. A ordem dessas atribuições evita perder o restante da lista."
+              ]
+            ],
+            [
+              "Excluir transfere a ligação",
+              [
+                "Localize a vítima e seu predecessor. Se for o primeiro nó, inicio recebe vitima->prox. Caso contrário, ant->prox recebe esse sucessor. Só então libere a vítima.",
+                "Para uma lista ordenada sem repetição, a busca pode parar na primeira chave maior ou igual à procurada. Se for maior, a chave está ausente. Mesmo com essa parada antecipada, o pior caso continua linear."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: inserir 6 antes de 9",
+            [
+              "Em 2→5→9, a busca termina com ant no nó 5 e atual no nó 9. Alocar novo não altera a lista.",
+              "Defina novo->prox=atual e ant->prox=novo. O caminho a partir de inicio passa a ser 2→5→6→9. Se atual fosse o primeiro, seria necessário trocar inicio."
+            ]
+          ],
+          "invariant": "Cada nó válido é alcançável uma vez desde inicio; o último aponta para NULL.",
+          "cost": "Busca por chave O(n); religação com predecessor conhecido O(1); espaço total O(n).",
+          "caution": "Salvar apenas o endereço da vítima não basta para excluí-la em geral em uma lista simples.",
+          "sources": [
+            {
+              "source": "lineares",
+              "pages": "27–43",
+              "preview": [
+                40
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Ordem das atribuições",
+              "kind": "Rastreamento",
+              "prompt": "Em 3→7→10, novo guarda 5 e ant aponta para 3. Execute novo->prox=ant->prox; ant->prox=novo. Escreva a lista final.",
+              "hint": "A primeira linha preserva o antigo sucessor de 3.",
+              "steps": [
+                "novo->prox recebe o endereço do nó 7.",
+                "ant->prox passa a apontar para novo.",
+                "A lista final é 3→5→7→10."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-010",
+              "topic": "ligada",
+              "chapter": "01"
+            },
+            {
+              "title": "Onde o resto se perdeu?",
+              "kind": "Depuração",
+              "prompt": "Para inserir novo após ant, alguém faz ant->prox=novo; novo->prox=ant->prox. Explique o defeito.",
+              "hint": "Na segunda linha, ant->prox já foi alterado.",
+              "steps": [
+                "A segunda linha atribui novo->prox=novo e cria um laço no nó novo.",
+                "O antigo sucessor foi perdido, se não havia outra referência a ele.",
+                "Guarde o sucessor antes ou execute novo->prox=ant->prox primeiro."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-011",
+              "topic": "ligada",
+              "chapter": "01"
+            },
+            {
+              "title": "Excluir a chave em lista simples",
+              "kind": "Código",
+              "prompt": "NO contém chave e prox. Implemente exclui(NO **inicio,int chave) sem sentinela. Retorne 1 se encontrou; 0 se ausente.",
+              "hint": "Mantenha ant e atual; a cabeça precisa de tratamento próprio.",
+              "steps": [
+                "A busca termina na primeira chave igual ou em NULL.",
+                "Religue o predecessor ou o início ao sucessor.",
+                "Libere a vítima uma vez e não use seus campos depois."
+              ],
+              "answer_code": "int exclui(NO **inicio, int chave) {\n    NO *ant = NULL, *p = *inicio;\n    while (p && p->chave != chave) { ant = p; p = p->prox; }\n    if (!p) return 0;\n    if (ant) ant->prox = p->prox;\n    else *inicio = p->prox;\n    free(p);\n    return 1;\n}",
+              "exam": "",
+              "id": "ED-012",
+              "topic": "ligada",
+              "chapter": "01"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "circular",
+          "title": "Circular, nó-cabeça e lista dupla",
+          "objective": "Usar uma sentinela e acertar as duas direções de uma lista circular.",
+          "sections": [
+            [
+              "Um nó que não é elemento",
+              [
+                "O nó-cabeça H existe mesmo quando a lista está vazia. Em uma lista dupla circular vazia, H->prox=H e H->ant=H. O último nó válido aponta para H e o primeiro tem H como anterior. Nunca devolva H como dado encontrado.",
+                "Na busca ordenada com sentinela, grave ch no campo de chave de H e avance enquanto a chave atual for menor que ch. Ao parar, só há sucesso se atual!=H e atual->chave==ch. A sentinela simplifica a parada, sem virar elemento válido."
+              ]
+            ],
+            [
+              "Duas ligações para remover",
+              [
+                "Para remover p válido, p->ant->prox=p->prox e p->prox->ant=p->ant. Depois copie/entregue o registro, quando necessário, e libere p. Guarde ou copie qualquer dado antes de free.",
+                "O mesmo código de religação funciona no primeiro, no último e no único elemento, pois H participa das ligações. Inicializar ou destruir H é uma responsabilidade diferente de remover dados válidos."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: retirar o único elemento",
+            [
+              "Em H↔7↔H, p é o nó 7. A primeira religação faz H->prox=H. A segunda faz H->ant=H.",
+              "Depois de liberar p, a lista está vazia e H continua vivo. O retorno de busca não pode confundir a chave temporariamente escrita em H com um registro válido."
+            ]
+          ],
+          "invariant": "Para cada nó alcançável p, p->prox->ant=p e p->ant->prox=p; H nunca é removido por exclusão de dados.",
+          "cost": "Localizar por chave O(n); excluir um nó válido já encontrado O(1); espaço auxiliar O(1).",
+          "caution": "O parâmetro da prova é um registro completo. Copie o registro inteiro, não apenas sua chave.",
+          "sources": [
+            {
+              "source": "lineares",
+              "pages": "44–62",
+              "preview": [
+                56
+              ]
+            },
+            {
+              "source": "prova-listas",
+              "pages": "2–4",
+              "preview": [
+                3
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Duas setas por vizinhança",
+              "kind": "Rastreamento",
+              "prompt": "Em H↔2↔6↔9↔H, remova 6. Quais campos dos nós 2 e 9 mudam?",
+              "hint": "Liste o sucessor e o predecessor antes e depois.",
+              "steps": [
+                "O nó 2 passa a ter prox apontando para 9.",
+                "O nó 9 passa a ter ant apontando para 2.",
+                "Os campos ant de 2 e prox de 9 ficam iguais. A memória do nó 6 pode ser liberada."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-013",
+              "topic": "circular",
+              "chapter": "01"
+            },
+            {
+              "title": "Cabeça com chave igual",
+              "kind": "Invariante",
+              "prompt": "A busca com sentinela retorna H após gravar ch em H->reg.chave. Isso significa que encontrou ch na lista? Justifique.",
+              "hint": "O nó-cabeça está fora do conjunto de registros válidos.",
+              "steps": [
+                "Não. A igualdade em H é produzida pela própria busca para garantir parada.",
+                "Exija atual!=H antes de devolver um nó encontrado.",
+                "Isso também resolve o caso de lista vazia, em que o primeiro atual já é H."
+              ],
+              "answer_code": "",
+              "exam": "prova-listas · questão 3",
+              "id": "ED-014",
+              "topic": "circular",
+              "chapter": "01"
+            },
+            {
+              "title": "Excluir como na prova",
+              "kind": "Código",
+              "prompt": "ELEMENTO tem REGISTRO reg e ponteiros ant/prox. LISTAY tem cabeca. Assuma buscaSeq válida e *saida disponível. Implemente excluirElemLista.",
+              "hint": "Copie a saída e ajuste os dois vizinhos antes de liberar.",
+              "steps": [
+                "Se buscaSeq retorna NULL, nada muda.",
+                "Copie o registro inteiro.",
+                "A religação funciona inclusive se a vítima for o único dado válido."
+              ],
+              "answer_code": "int excluirElemLista(LISTAY *l, int ch, REGISTRO *saida) {\n    ELEMENTO *p = buscaSeq(l, ch);\n    if (!p) return 0;\n    *saida = p->reg;\n    p->prox->ant = p->ant;\n    p->ant->prox = p->prox;\n    free(p);\n    return 1;\n}",
+              "exam": "prova-listas · questão 3",
+              "id": "ED-015",
+              "topic": "circular",
+              "chapter": "01"
+            }
+          ],
+          "code": "",
+          "exam": "Prova ACH2023 de 2018: questão 3 (lista dupla circular) e questão 4 (parâmetros por valor).",
+          "code_language": "C (trecho de referência)"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "title": "Pilhas e filas",
+      "intro": "Ligue a política de retirada à representação. Depois essas estruturas vão sustentar os percursos em árvores e grafos.",
+      "topics": [
+        {
+          "id": "pilha",
+          "title": "Pilha: o último entra, o primeiro sai",
+          "objective": "Rastrear push/pop e atualizar o topo com segurança.",
+          "sections": [
+            [
+              "LIFO é a regra",
+              [
+                "A pilha permite inserir e retirar no topo. LIFO significa que o último elemento inserido será o próximo retirado. Um vetor e uma lista ligada podem realizar essa regra com diferentes limites de capacidade.",
+                "Na versão ligada, topo aponta para o primeiro nó. push aloca novo, faz novo->prox=topo e troca topo. pop copia o registro, avança topo para o sucessor e libera o antigo topo."
+              ]
+            ],
+            [
+              "Por que a recursão combina com pilha",
+              [
+                "Uma chamada guarda informações para retomar a função que a chamou. A última chamada ainda ativa retorna primeiro. Simular um percurso recursivo exige guardar o trabalho ainda pendente, não apenas os valores já visitados.",
+                "Em uma pré-ordem iterativa que deve visitar a esquerda primeiro, empilhe a direita antes da esquerda: a ordem de inserção é invertida pela retirada LIFO."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: o que fica no topo",
+            [
+              "Faça push(4), push(7), pop(), push(2). O pop entrega 7.",
+              "A pilha final, do topo para a base, é 2→4. Um novo pop entrega 2 e deixa 4 no topo."
+            ]
+          ],
+          "invariant": "topo=NULL representa vazio; todos os nós da pilha são alcançáveis seguindo prox a partir do topo.",
+          "cost": "push e pop O(1); n elementos usam O(n); esvaziar completamente custa O(n).",
+          "caution": "Pop em vazio deve sinalizar falha antes de desreferenciar topo.",
+          "sources": [
+            {
+              "source": "lineares",
+              "pages": "63–77",
+              "preview": [
+                77
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Saídas de uma pilha",
+              "kind": "Rastreamento",
+              "prompt": "Em pilha vazia: push(1), push(2), pop(), push(3), pop(), pop(). Dê a sequência retirada.",
+              "hint": "Escreva a pilha do topo para a base após cada ação.",
+              "steps": [
+                "Após os dois primeiros pushes, a pilha é 2→1; sai 2.",
+                "push(3) produz 3→1; sai 3.",
+                "O último pop entrega 1. Sequência: 2,3,1."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-016",
+              "topic": "pilha",
+              "chapter": "02"
+            },
+            {
+              "title": "A ordem da pré-ordem",
+              "kind": "Justificativa",
+              "prompt": "Uma rotina empilha primeiro o filho esquerdo e depois o direito. Qual filho será visitado primeiro ao desempilhar? Corrija para visitar a esquerda primeiro.",
+              "hint": "Pilha retira o último inserido.",
+              "steps": [
+                "O direito será retirado primeiro.",
+                "Para a ordem raiz-esquerda-direita, empilhe o direito antes do esquerdo.",
+                "Só empilhe filhos existentes."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-017",
+              "topic": "pilha",
+              "chapter": "02"
+            },
+            {
+              "title": "Push que pode falhar",
+              "kind": "Código",
+              "prompt": "PILHA possui NO *topo; NO tem int chave e NO *prox. Implemente push(PILHA *p,int x), retornando 0 se malloc falhar e 1 se funcionar.",
+              "hint": "A pilha deve continuar válida se a alocação falhar.",
+              "steps": [
+                "Alocar antes de alterar topo permite falhar sem mudança parcial.",
+                "O novo nó aponta para o antigo topo.",
+                "Só ao final o topo passa a apontar para o novo nó."
+              ],
+              "answer_code": "int push(PILHA *p, int x) {\n    NO *novo = malloc(sizeof *novo);\n    if (!novo) return 0;\n    novo->chave = x;\n    novo->prox = p->topo;\n    p->topo = novo;\n    return 1;\n}",
+              "exam": "",
+              "id": "ED-018",
+              "topic": "pilha",
+              "chapter": "02"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "fila-circular",
+          "title": "Fila estática circular: índice não é quantidade",
+          "objective": "Usar início, quantidade e módulo para reutilizar um vetor.",
+          "sections": [
+            [
+              "FIFO e o intervalo válido",
+              [
+                "Uma fila retira o elemento inserido há mais tempo: FIFO. Na versão circular, os elementos lógicos podem cruzar o fim do vetor. O índice físico do k-ésimo elemento lógico é (inicio+k)%C.",
+                "Mantemos inicio e n, com 0≤n≤C. Vazia é n=0 e cheia é n=C. O próximo local de inserção é (inicio+n)%C; inserir não precisa deslocar ninguém."
+              ]
+            ],
+            [
+              "Retirar avança o início",
+              [
+                "Depois de copiar o primeiro registro, faça inicio=(inicio+1)%C e n=n−1. Quando n=0, o índice inicio pode continuar diferente de zero: a quantidade é que define o vazio.",
+                "Uma implementação que usa apenas inicio e fim precisa de outra convenção para diferenciar cheio de vazio. Não misture fórmulas de implementações diferentes na mesma resolução."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: a volta no vetor",
+            [
+              "Com C=5, inicio=3 e n=2, os elementos válidos ocupam A[3] e A[4].",
+              "A próxima inserção usa (3+2)%5=0. Depois, n=3. Uma remoção lê A[3], faz inicio=4 e n=2; a ordem lógica restante passa por A[4] e A[0]."
+            ]
+          ],
+          "invariant": "O k-ésimo dado válido fica em A[(inicio+k)%C], para 0≤k<n.",
+          "cost": "Inserir e retirar O(1); estrutura ocupa O(C); operação usa O(1) auxiliar.",
+          "caution": "A posição de inserção deve ser calculada antes de incrementar a quantidade.",
+          "sources": [
+            {
+              "source": "lineares",
+              "pages": "78–94",
+              "preview": [
+                87
+              ]
+            },
+            {
+              "source": "prova-listas",
+              "pages": "4",
+              "preview": [
+                4
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Enfileirar depois da volta",
+              "kind": "Rastreamento",
+              "prompt": "C=4, inicio=2, n=2; a ordem lógica é [8,9]. Insira 5 e depois retire um elemento. Dê as posições escritas/lidas e o estado final.",
+              "hint": "A nova posição é (inicio+n)%C.",
+              "steps": [
+                "A inserção escreve A[0]=5 e n vira 3.",
+                "A remoção entrega A[2]=8; inicio vira 3 e n vira 2.",
+                "A ordem lógica final é [9,5], em A[3],A[0]."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-019",
+              "topic": "fila-circular",
+              "chapter": "02"
+            },
+            {
+              "title": "Vazio não significa início zero",
+              "kind": "Invariante",
+              "prompt": "C=5, inicio=4 e n=0. A fila está válida? Onde a próxima inserção escreve?",
+              "hint": "Use a quantidade para decidir o vazio.",
+              "steps": [
+                "Sim, a fila está vazia e válida.",
+                "A próxima inserção usa (4+0)%5=4.",
+                "Reinicializar inicio=0 no vazio é uma opção de implementação, não uma exigência deste contrato."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-020",
+              "topic": "fila-circular",
+              "chapter": "02"
+            },
+            {
+              "title": "A inserção da prova",
+              "kind": "Código",
+              "prompt": "FILA tem REGISTRO A[MAX], int inicio e int numElementos. Implemente inserirElementoFila e devolva 0 se lotada. MAX é positivo.",
+              "hint": "A função deve preservar o início e aumentar apenas a quantidade.",
+              "steps": [
+                "Cheque se numElementos já vale MAX.",
+                "Calcule o final lógico com módulo.",
+                "Copie o registro para a posição livre e incremente a quantidade."
+              ],
+              "answer_code": "int inserirElementoFila(FILA *f, REGISTRO reg) {\n    if (f->numElementos == MAX) return 0;\n    int fim = (f->inicio + f->numElementos) % MAX;\n    f->A[fim] = reg;\n    ++f->numElementos;\n    return 1;\n}",
+              "exam": "prova-listas · questão 5",
+              "id": "ED-021",
+              "topic": "fila-circular",
+              "chapter": "02"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "fila-dinamica",
+          "title": "Fila dinâmica e o último elemento",
+          "objective": "Manter início e fim consistentes, inclusive ao passar pelo vazio.",
+          "sections": [
+            [
+              "Dois ponteiros com papéis diferentes",
+              [
+                "inicio permite retirar o mais antigo. fim permite inserir no final sem percorrer todos os nós. Um novo nó sempre começa com prox=NULL.",
+                "Se a fila já tem elementos, faça fim->prox=novo. Se estava vazia, faça inicio=novo. Nos dois casos, termine com fim=novo."
+              ]
+            ],
+            [
+              "Retirar o último exige um acerto extra",
+              [
+                "Guarde o antigo inicio, avance inicio e copie o dado. Se o novo inicio for NULL, faça fim=NULL. Então libere o nó retirado.",
+                "Um fim pendurado em memória liberada pode parecer inofensivo até a próxima inserção. O defeito aparece na transição de um elemento para zero, por isso esse caso merece rastreamento separado."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: reutilizar depois de esvaziar",
+            [
+              "Em fila com apenas o nó 6, inicio e fim apontam para 6. Ao retirar, ambos devem passar a NULL.",
+              "Ao inserir 9, o caso de fila vazia define inicio=novo; depois fim=novo. O antigo nó 6 não participa de nenhuma ligação."
+            ]
+          ],
+          "invariant": "Vazia: inicio=fim=NULL. Não vazia: fim->prox=NULL e fim é alcançável desde inicio.",
+          "cost": "Inserção com ponteiro fim e retirada pelo início: O(1); memória total O(n).",
+          "caution": "Uma lista com apenas inicio também pode ser fila, mas inserir no fim passaria a exigir O(n).",
+          "sources": [
+            {
+              "source": "lineares",
+              "pages": "95–113",
+              "preview": [
+                113
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Um, zero, um",
+              "kind": "Rastreamento",
+              "prompt": "Fila vazia recebe 4, depois retira 4 e recebe 8. Indique inicio, fim e fim->prox em cada estado não vazio.",
+              "hint": "No estado vazio, inicio e fim são NULL.",
+              "steps": [
+                "Após inserir 4, ambos apontam para o nó 4; o prox desse nó é NULL.",
+                "Após retirar 4, ambos são NULL.",
+                "Após inserir 8, ambos apontam para o novo nó 8; seu prox é NULL."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-022",
+              "topic": "fila-dinamica",
+              "chapter": "02"
+            },
+            {
+              "title": "Ponteiro sobrando",
+              "kind": "Depuração",
+              "prompt": "Uma remoção faz inicio=inicio->prox e free(antigo), mas nunca atualiza fim. Em qual caso isso viola o contrato?",
+              "hint": "Examine uma fila que tem exatamente um nó.",
+              "steps": [
+                "Quando o único elemento é retirado, inicio vira NULL e fim ainda aponta para o nó liberado.",
+                "A próxima operação pode acessar memória inválida se tratar fim como válido.",
+                "Depois de avançar inicio, faça if (!inicio) fim=NULL."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-023",
+              "topic": "fila-dinamica",
+              "chapter": "02"
+            },
+            {
+              "title": "Retirada completa",
+              "kind": "Código",
+              "prompt": "FILA possui NO *inicio,*fim; NO contém REGISTRO reg e NO *prox. Implemente retira(FILA *f,REGISTRO *saida). Assuma f e saida válidos.",
+              "hint": "A verificação do novo início acontece antes do retorno.",
+              "steps": [
+                "Cheque vazio antes de ler o registro.",
+                "Copie, avance e zere fim se necessário.",
+                "Libere a vítima e devolva sucesso."
+              ],
+              "answer_code": "int retira(FILA *f, REGISTRO *saida) {\n    NO *p = f->inicio;\n    if (!p) return 0;\n    *saida = p->reg;\n    f->inicio = p->prox;\n    if (!f->inicio) f->fim = NULL;\n    free(p);\n    return 1;\n}",
+              "exam": "",
+              "id": "ED-024",
+              "topic": "fila-dinamica",
+              "chapter": "02"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "title": "Árvores e busca binária",
+      "intro": "Aprenda primeiro a forma da árvore, depois seus percursos e a propriedade de ordem que permite descartar subárvores.",
+      "topics": [
+        {
+          "id": "arvore-conceitos",
+          "title": "Raiz, altura e tamanho",
+          "objective": "Calcular altura e número de nós usando a convenção dos slides de SIN5013.",
+          "sections": [
+            [
+              "A unidade é uma aresta",
+              [
+                "A raiz tem nível 0. A altura de um nó é a quantidade de arestas do caminho mais longo até uma folha. Logo, folha tem altura 0 e árvore vazia tem altura −1 nesta implementação.",
+                "Uma árvore binária admite até dois filhos por nó, distinguindo esquerdo e direito. Isso não impõe ordem às chaves e não garante que a árvore esteja balanceada."
+              ]
+            ],
+            [
+              "Recorrências que descrevem a estrutura",
+              [
+                "Para uma árvore não vazia, tamanho=1+tamanho(esq)+tamanho(dir). Para altura, use 1+max(altura(esq),altura(dir)). Não some as alturas: queremos o caminho mais longo.",
+                "Uma árvore binária de altura h tem no máximo 2^(h+1)−1 nós. O máximo resulta de somar 1+2+4+…+2^h. A altura mínima para n>0 é ceil(log₂(n+1))−1; uma cadeia com n nós tem altura n−1."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: mesma contagem, alturas diferentes",
+            [
+              "Uma raiz 8 com filhos 4 e 12 tem três nós e altura 1. A cadeia 4→8→12 também tem três nós, mas altura 2.",
+              "Na recorrência de altura, uma folha devolve 1+max(−1,−1)=0. Uma árvore vazia devolve −1 imediatamente."
+            ]
+          ],
+          "invariant": "Cada nó, exceto a raiz, tem um único pai. Não há ciclos nas ligações de filhos.",
+          "cost": "Calcular altura sem valores armazenados visita todos os nós: O(n), com O(h) de pilha recursiva.",
+          "caution": "A apostila de apoio pode usar outra convenção de altura. Neste caderno e nos slides principais, contamos arestas.",
+          "sources": [
+            {
+              "source": "arvores",
+              "pages": "2–8",
+              "preview": [
+                7
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Calcule de baixo para cima",
+              "kind": "Rastreamento",
+              "prompt": "Uma raiz A tem filho esquerdo B e direito C. B tem apenas filho D; C não tem filhos. D também é folha. Dê número de nós, altura da raiz e nível de D.",
+              "hint": "Folha começa em altura 0; suba uma aresta por nível.",
+              "steps": [
+                "Há quatro nós: A,B,C,D.",
+                "D e C têm altura 0; B tem altura 1; A tem altura 2.",
+                "D está a duas arestas da raiz, portanto seu nível é 2."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-025",
+              "topic": "arvore-conceitos",
+              "chapter": "03"
+            },
+            {
+              "title": "Nove nós cabem em qual altura?",
+              "kind": "Justificativa",
+              "prompt": "Determine a menor altura possível de uma árvore binária com nove nós e a maior altura possível.",
+              "hint": "Compare nove com os máximos 1,3,7,15.",
+              "steps": [
+                "Altura 2 permite no máximo sete nós, então não basta.",
+                "Altura 3 permite quinze e comporta nove; a mínima é 3.",
+                "A máxima é 8, quando cada nó tem apenas um filho."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-026",
+              "topic": "arvore-conceitos",
+              "chapter": "03"
+            },
+            {
+              "title": "Conte folhas",
+              "kind": "Código",
+              "prompt": "NO possui esq e dir. Escreva int folhas(NO *r). Uma árvore vazia tem zero folhas.",
+              "hint": "O caso de folha é diferente do caso de árvore vazia.",
+              "steps": [
+                "Se r é NULL, devolva zero.",
+                "Se os dois filhos são NULL, r contribui uma folha.",
+                "Caso contrário, some as folhas das duas subárvores."
+              ],
+              "answer_code": "int folhas(NO *r) {\n    if (!r) return 0;\n    if (!r->esq && !r->dir) return 1;\n    return folhas(r->esq) + folhas(r->dir);\n}",
+              "exam": "",
+              "id": "ED-027",
+              "topic": "arvore-conceitos",
+              "chapter": "03"
+            }
+          ],
+          "code": "int altura(NO *r) {\n    if (!r) return -1;\n    int e = altura(r->esq), d = altura(r->dir);\n    return 1 + (e > d ? e : d);\n}",
+          "exam": "prova-arvores · questão 2 pede identificar contagem de nós e altura em código recursivo.",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "percursos",
+          "title": "Percursos: antes, entre, depois e por nível",
+          "objective": "Gerar ordens de visita e escolher pilha ou fila.",
+          "sections": [
+            [
+              "A posição da visita define o percurso",
+              [
+                "Na pré-ordem, visite raiz, esquerda, direita. Em ordem: esquerda, raiz, direita. Pós-ordem: esquerda, direita, raiz. As chamadas preservam a mesma estrutura; a posição da ação sobre a raiz muda a ordem produzida.",
+                "Em ordem só gera chaves ordenadas quando a árvore satisfaz a propriedade de ABB. Em uma árvore binária qualquer, o percurso em ordem continua bem definido, mas pode produzir uma sequência desordenada."
+              ]
+            ],
+            [
+              "Fila para níveis, pilha para pendências",
+              [
+                "Na visita por nível, enfileire a raiz, retire o próximo nó e enfileire seus filhos esquerdo e direito. A fila guarda a fronteira.",
+                "Na pré-ordem iterativa, empilhe a raiz. Ao retirar um nó, visite-o e empilhe direito e depois esquerdo. Na destruição de uma árvore, pós-ordem permite liberar os filhos antes de perder o endereço da raiz."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: raiz 8, filhos 3 e 10; 3 tem 1 e 6",
+            [
+              "Pré: 8,3,1,6,10. Em ordem: 1,3,6,8,10. Pós: 1,6,3,10,8.",
+              "Por nível: 8,3,10,1,6. O nível termina antes de a fila processar os filhos do próximo nível."
+            ]
+          ],
+          "invariant": "Cada nó é visitado uma vez. Em nível, a fila contém apenas nós descobertos que ainda não foram processados.",
+          "cost": "Todos os percursos visitam n nós: O(n). Recursão usa O(h); fila por nível pode guardar O(n) nós no pior caso.",
+          "caution": "A ordem dos filhos precisa estar definida para o enunciado ter uma única resposta.",
+          "sources": [
+            {
+              "source": "arvores",
+              "pages": "9–38",
+              "preview": [
+                19,
+                29
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Três ordens, uma árvore",
+              "kind": "Rastreamento",
+              "prompt": "Árvore: 5 é raiz; 2 é seu filho esquerdo, 9 é o direito; 9 tem 7 à esquerda e 11 à direita. Dê pré, em e pós-ordem.",
+              "hint": "Use a regra sobre cada subárvore inteira.",
+              "steps": [
+                "Pré: 5,2,9,7,11.",
+                "Em ordem: 2,5,7,9,11.",
+                "Pós: 2,7,11,9,5."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-028",
+              "topic": "percursos",
+              "chapter": "03"
+            },
+            {
+              "title": "Ordem não cria propriedade",
+              "kind": "Justificativa",
+              "prompt": "A árvore com raiz 5, esquerdo 9 e direito 2 é binária. Seu percurso em ordem será crescente?",
+              "hint": "Ser binária só limita o número de filhos.",
+              "steps": [
+                "O percurso em ordem é 9,5,2, que não é crescente.",
+                "Ela viola a propriedade de busca binária.",
+                "Uma rotina de percurso não reorganiza as chaves."
+              ],
+              "answer_code": "",
+              "exam": "prova-arvores · questão 3",
+              "id": "ED-029",
+              "topic": "percursos",
+              "chapter": "03"
+            },
+            {
+              "title": "Liberar toda a árvore",
+              "kind": "Código",
+              "prompt": "Implemente destroi(NO **r), liberando todos os nós de uma árvore acíclica. Ao fim, *r deve ser NULL.",
+              "hint": "Após liberar a raiz, seus ponteiros não podem mais ser lidos.",
+              "steps": [
+                "Destrua primeiro as subárvores.",
+                "Libere a raiz somente depois dos filhos.",
+                "Zere o ponteiro recebido para o chamador observar a árvore vazia."
+              ],
+              "answer_code": "void destroi(NO **r) {\n    if (!*r) return;\n    destroi(&(*r)->esq);\n    destroi(&(*r)->dir);\n    free(*r);\n    *r = NULL;\n}",
+              "exam": "",
+              "id": "ED-030",
+              "topic": "percursos",
+              "chapter": "03"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "abb-busca",
+          "title": "ABB: a propriedade vale para a subárvore toda",
+          "objective": "Buscar e inserir respeitando limites globais, com uma política de duplicatas explícita.",
+          "sections": [
+            [
+              "A comparação elimina uma subárvore",
+              [
+                "Neste caderno, uma ABB não admite chaves repetidas. Todas as chaves da subárvore esquerda são menores que a raiz; todas as da direita são maiores. A regra vale recursivamente.",
+                "Comparar apenas cada pai com seus filhos não basta para validar uma ABB. Um descendente pode respeitar seu pai imediato e ainda violar um ancestral."
+              ]
+            ],
+            [
+              "Inserir segue a mesma descida da busca",
+              [
+                "Se a chave é menor, avance para esq; se maior, para dir. NULL significa posição de inserção ou chave ausente. Uma igualdade informa duplicata e deve seguir a política do contrato.",
+                "O custo acompanha a altura, O(h). Uma ABB sem balanceamento pode virar uma cadeia e chegar a O(n). A palavra binária não promete O(log n)."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: inserir 8,3,10,1,6,9",
+            [
+              "8 vira raiz. 3 e 10 ficam à esquerda e direita. 1 fica à esquerda de 3 e 6 à direita de 3.",
+              "Para 9: compare com 8 e vá à direita; compare com 10 e vá à esquerda. Seu lugar é o filho esquerdo de 10. Buscar 7 percorre 8→3→6→NULL."
+            ]
+          ],
+          "invariant": "Cada subárvore respeita os limites impostos por todos os seus ancestrais.",
+          "cost": "Busca e inserção O(h), que pode ser O(n); busca iterativa usa O(1) de memória auxiliar.",
+          "caution": "Inserir dados em ordem crescente pode produzir uma cadeia se não houver balanceamento.",
+          "sources": [
+            {
+              "source": "arvores",
+              "pages": "39–60 e 69–71",
+              "preview": [
+                47
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Caminho de busca",
+              "kind": "Rastreamento",
+              "prompt": "Insira 20,10,30,5,15,25,40 em ABB vazia. Quais nós são comparados ao buscar 17?",
+              "hint": "Na ausência, continue até o ponteiro NULL.",
+              "steps": [
+                "Compare 17 com 20: vá à esquerda.",
+                "Compare com 10: vá à direita. Compare com 15: vá à direita.",
+                "O próximo ponteiro é NULL; a chave está ausente. Nós comparados: 20,10,15."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-031",
+              "topic": "abb-busca",
+              "chapter": "03"
+            },
+            {
+              "title": "O neto viola o ancestral",
+              "kind": "Invariante",
+              "prompt": "Raiz 20, filho esquerdo 10; 10 tem filho direito 25. As comparações pai-filho parecem corretas. A árvore é ABB?",
+              "hint": "25 está em qual lado de 20?",
+              "steps": [
+                "Não. 25 está na subárvore esquerda de 20 e deveria ser menor que 20.",
+                "A comparação com seu pai 10 não detecta a violação.",
+                "Uma validação recursiva precisa propagar intervalos de valores permitidos."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-032",
+              "topic": "abb-busca",
+              "chapter": "03"
+            },
+            {
+              "title": "Busca iterativa completa",
+              "kind": "Código",
+              "prompt": "Implemente NO *busca(NO *raiz,int ch) numa ABB sem duplicatas. Retorne NULL se a chave não existir.",
+              "hint": "A raiz da próxima iteração deve ser apenas um dos dois filhos.",
+              "steps": [
+                "Teste NULL antes de acessar chave.",
+                "Retorne o próprio nó quando houver igualdade.",
+                "A comparação decide a única subárvore que ainda pode conter a chave."
+              ],
+              "answer_code": "NO *busca(NO *raiz, int ch) {\n    NO *p = raiz;\n    while (p) {\n        if (p->chave == ch) return p;\n        p = ch < p->chave ? p->esq : p->dir;\n    }\n    return NULL;\n}",
+              "exam": "prova-arvores · questão 4",
+              "id": "ED-033",
+              "topic": "abb-busca",
+              "chapter": "03"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "abb-remocao",
+          "title": "Excluir em ABB: três casos e um predecessor",
+          "objective": "Remover preservando os dados e as subárvores, inclusive quando a raiz muda.",
+          "sections": [
+            [
+              "Zero ou um filho",
+              [
+                "Uma folha pode ser desligada. Um nó com um único filho é substituído por esse filho. Quem apontava para a vítima deve passar a apontar para o substituto.",
+                "Receber NO **raiz permite tratar a remoção da raiz. Também é possível manter o pai durante a busca; nesse caso, é preciso distinguir a raiz dos filhos esquerdo e direito."
+              ]
+            ],
+            [
+              "Dois filhos: copie e remova o predecessor",
+              [
+                "Usaremos o maior nó da subárvore esquerda, conforme a prova. Ele é encontrado descendo uma vez à esquerda e depois sempre à direita. Esse predecessor não tem filho direito, mas pode ter um esquerdo.",
+                "Copie seu registro para a posição da vítima original e remova fisicamente o predecessor. O eventual filho esquerdo do predecessor precisa ocupar seu lugar. Se o predecessor é o filho esquerdo imediato da vítima, esse caso também deve funcionar."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: excluir 40 de uma árvore com 20→30 à esquerda",
+            [
+              "A raiz 40 tem esquerdo 20 e direito 80; 20 tem direito 30; 30 tem esquerdo 25. O predecessor de 40 é 30.",
+              "Copie 30 para a raiz. O antigo nó 30 é retirado e 20->dir passa a apontar para 25. A raiz fica 30, com 20 à esquerda e 80 à direita; 25 permanece à direita de 20."
+            ]
+          ],
+          "invariant": "O nó removido fisicamente tem no máximo um filho; nenhum descendente válido perde sua ligação.",
+          "cost": "Busca+localização do predecessor O(h); O(n) no pior caso de ABB; versão recursiva usa O(h) auxiliar.",
+          "caution": "Se o nó contém outros campos, substituir apenas a chave pode associá-la a um registro errado: copie o registro inteiro.",
+          "sources": [
+            {
+              "source": "arvores",
+              "pages": "61–68",
+              "preview": [
+                68
+              ]
+            },
+            {
+              "source": "prova-arvores",
+              "pages": "1 e 3–4",
+              "preview": [
+                1
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Predecessor com filho",
+              "kind": "Rastreamento",
+              "prompt": "Use a árvore do exemplo: 40(20(NULL,30(25,NULL)),80). Exclua 40 usando o maior à esquerda. Liste a raiz e os filhos de 20 após a operação.",
+              "hint": "O predecessor é 30 e seu filho 25 não pode desaparecer.",
+              "steps": [
+                "A raiz passa a conter 30.",
+                "O filho esquerdo de 20 continua NULL.",
+                "O filho direito de 20 passa a ser 25. O nó que continha o antigo 30 é liberado."
+              ],
+              "answer_code": "",
+              "exam": "prova-arvores · questão 1d",
+              "id": "ED-034",
+              "topic": "abb-remocao",
+              "chapter": "03"
+            },
+            {
+              "title": "Predecessor imediato",
+              "kind": "Depuração",
+              "prompt": "A raiz 10 tem esquerdo 8 e direito 15; 8 tem esquerdo 6 e não tem direito. Ao excluir 10, qual ligação deve mudar depois da cópia de 8?",
+              "hint": "O pai do predecessor é a própria raiz.",
+              "steps": [
+                "A raiz passa a conter 8.",
+                "A ligação esquerda da raiz deve passar a apontar para 6.",
+                "Atualizar sempre paiPred->dir estaria errado neste caso; o predecessor era filho esquerdo direto."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-035",
+              "topic": "abb-remocao",
+              "chapter": "03"
+            },
+            {
+              "title": "Remoção por ponteiro para ligação",
+              "kind": "Código",
+              "prompt": "NO guarda apenas int chave e filhos esq/dir. Escreva uma remoção recursiva por NO **r usando o predecessor. É um modelo didático sem registros adicionais.",
+              "hint": "Um ponteiro para a ligação do predecessor elimina o caso especial de seu pai.",
+              "steps": [
+                "Desça pela busca até a chave.",
+                "Com zero ou um filho, substitua a ligação *r e libere a vítima.",
+                "Com dois filhos, procure a ligação do maior à esquerda, copie a chave e relacione seu filho esquerdo ao lugar dele."
+              ],
+              "answer_code": "int excluiABB(NO **r, int ch) {\n    if (!*r) return 0;\n    if (ch < (*r)->chave) return excluiABB(&(*r)->esq, ch);\n    if (ch > (*r)->chave) return excluiABB(&(*r)->dir, ch);\n    NO *p = *r;\n    if (!p->esq || !p->dir) {\n        *r = p->esq ? p->esq : p->dir;\n        free(p);\n    } else {\n        NO **lig = &p->esq;\n        while ((*lig)->dir) lig = &(*lig)->dir;\n        NO *pred = *lig;\n        p->chave = pred->chave;\n        *lig = pred->esq;\n        free(pred);\n    }\n    return 1;\n}",
+              "exam": "prova-arvores · questão 4",
+              "id": "ED-036",
+              "topic": "abb-remocao",
+              "chapter": "03"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "title": "AVL: preservar ordem e altura",
+      "intro": "Use a convenção de balanceamento dos slides: altura da direita menos altura da esquerda. Aprenda a justificar cada rotação.",
+      "topics": [
+        {
+          "id": "avl-balanceamento",
+          "title": "Balanceamento e altura logarítmica",
+          "objective": "Calcular o fator de cada nó e distinguir ABB, AVL e heap.",
+          "sections": [
+            [
+              "Duas propriedades ao mesmo tempo",
+              [
+                "Uma AVL é uma ABB em que todo nó tem fator b=h(dir)−h(esq) em {−1,0,1}. A diferença é no máximo um em valor absoluto; não precisa ser exatamente um.",
+                "Verificar apenas o fator da raiz não basta. Uma subárvore pode estar desbalanceada e a raiz ainda ter filhos de alturas parecidas. As regras de ordenação da ABB também continuam obrigatórias."
+              ]
+            ],
+            [
+              "Por que a altura não cresce linearmente",
+              [
+                "Se N(h) é o menor número de nós de uma AVL de altura h, N(−1)=0, N(0)=1 e N(h)=1+N(h−1)+N(h−2). O caso mais econômico combina alturas h−1 e h−2.",
+                "Essa recorrência cresce exponencialmente em h, como a sequência de Fibonacci. Inverter a relação dá h=O(log n). Assim, uma descida até uma folha custa O(log n), desde que as operações preservem o balanceamento."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: fatores de uma árvore pequena",
+            [
+              "Raiz 20 com filhos 10 e 30; 10 tem apenas filho esquerdo 5. As folhas têm b=0.",
+              "10 tem b=−1, pois h(dir)=−1 e h(esq)=0. A raiz tem b=0−1=−1. Todos os fatores são permitidos; a árvore é AVL."
+            ]
+          ],
+          "invariant": "Em cada nó, ordem de ABB e |h(dir)−h(esq)|≤1.",
+          "cost": "Buscar, inserir e excluir têm O(log n) quando alturas/fatores são atualizados em O(1) por nó visitado.",
+          "caution": "Recalcular recursivamente a altura de cada subárvore em toda comparação pode perder o custo logarítmico da implementação.",
+          "sources": [
+            {
+              "source": "avl",
+              "pages": "2–5 e 70–77",
+              "preview": [
+                5,
+                75
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Sinal do fator",
+              "kind": "Rastreamento",
+              "prompt": "Um nó tem subárvore esquerda de altura 2 e direita de altura 0. Calcule b e diga se viola a regra.",
+              "hint": "A convenção aqui é direita menos esquerda.",
+              "steps": [
+                "b=0−2=−2.",
+                "Há excesso de altura à esquerda.",
+                "O nó viola a regra e precisa de reequilíbrio se o restante é uma ABB válida."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-037",
+              "topic": "avl-balanceamento",
+              "chapter": "04"
+            },
+            {
+              "title": "O mínimo de nós",
+              "kind": "Demonstração",
+              "prompt": "Calcule N(1), N(2), N(3) com N(−1)=0 e N(0)=1. Uma AVL de altura 3 pode ter só cinco nós?",
+              "hint": "Use a recorrência, não a quantidade máxima de uma árvore completa.",
+              "steps": [
+                "N(1)=1+1+0=2.",
+                "N(2)=1+2+1=4 e N(3)=1+4+2=7.",
+                "Não: uma AVL de altura 3 exige no mínimo sete nós."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-038",
+              "topic": "avl-balanceamento",
+              "chapter": "04"
+            },
+            {
+              "title": "Três tipos de árvore",
+              "kind": "Justificativa",
+              "prompt": "Julgue e corrija: toda ABB é AVL; todo heap máximo é ABB; todo nó AVL tem fator −1,0 ou 1.",
+              "hint": "Separe forma, ordem de chaves e diferença de alturas.",
+              "steps": [
+                "Toda ABB é AVL: falso; uma ABB pode ser uma cadeia.",
+                "Todo heap máximo é ABB: falso; um heap ordena pai em relação aos filhos, não a subárvore esquerda em relação à direita.",
+                "Todo nó AVL tem fator −1,0 ou 1: verdadeiro, nesta convenção."
+              ],
+              "answer_code": "",
+              "exam": "prova-arvores · questão 3",
+              "id": "ED-039",
+              "topic": "avl-balanceamento",
+              "chapter": "04"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "avl-rotacoes",
+          "title": "LL, RR, LR e RL sem perder subárvores",
+          "objective": "Escolher a rotação e desenhar a ordem das subárvores antes e depois.",
+          "sections": [
+            [
+              "O nome descreve o caminho do excesso",
+              [
+                "LL indica descida à esquerda e depois à esquerda: uma rotação à direita corrige o trecho. RR é simétrico e usa rotação à esquerda.",
+                "LR requer rotação à esquerda no filho esquerdo e depois à direita na raiz local. RL faz direita no filho direito e depois esquerda na raiz local. Esses nomes de casos não são o sentido do giro final."
+              ]
+            ],
+            [
+              "A subárvore do meio muda de pai",
+              [
+                "Em uma rotação à direita em p, u=p->esq sobe; u->dir, chamada B, vira p->esq; p vira u->dir. A ordem em ordem A,u,B,p,C é preservada.",
+                "Retorne o novo topo local e faça o chamador apontar para ele. Se guardar alturas, atualize primeiro o nó que desceu e depois o que subiu. A rotação altera poucos ponteiros, não reordena os registros arbitrariamente."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: inserir 30,10,20",
+            [
+              "Depois da inserção simples, 30 tem esquerdo 10 e 10 tem direito 20. O caminho do excesso é esquerda-direita: caso LR.",
+              "Primeiro, gire à esquerda em 10. Depois, gire à direita em 30. O trecho final tem raiz 20, esquerdo 10 e direito 30."
+            ]
+          ],
+          "invariant": "O percurso em ordem é o mesmo antes e depois de cada rotação.",
+          "cost": "Uma rotação custa O(1), inclusive ao atualizar alturas armazenadas nos poucos nós envolvidos.",
+          "caution": "A rotação LL pedida na prova recebe a raiz local e deve devolver a nova raiz; não basta trocar chaves.",
+          "sources": [
+            {
+              "source": "avl",
+              "pages": "18–40",
+              "preview": [
+                21,
+                31
+              ]
+            },
+            {
+              "source": "prova-arvores",
+              "pages": "4",
+              "preview": [
+                4
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Reconheça os quatro casos",
+              "kind": "Rastreamento",
+              "prompt": "Em AVL vazia, classifique o caso provocado por cada sequência independente: (30,20,10), (10,20,30), (30,10,20), (10,30,20).",
+              "hint": "Escreva as duas direções a partir do primeiro nó desbalanceado.",
+              "steps": [
+                "30,20,10: LL, rotação à direita.",
+                "10,20,30: RR, rotação à esquerda.",
+                "30,10,20: LR; 10,30,20: RL. Nas quatro sequências, a raiz final é 20."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-040",
+              "topic": "avl-rotacoes",
+              "chapter": "04"
+            },
+            {
+              "title": "A subárvore B continua viva",
+              "kind": "Invariante",
+              "prompt": "p=40, seu esquerdo u=20; u tem direito 30 e p tem direito 60. Gire à direita em p. Dê a nova raiz e os filhos de 40.",
+              "hint": "O nó 30 fica entre 20 e 40 na ordem das chaves.",
+              "steps": [
+                "A nova raiz local é 20.",
+                "40 passa a ser filho direito de 20.",
+                "30 vira o filho esquerdo de 40 e 60 continua à direita de 40."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-041",
+              "topic": "avl-rotacoes",
+              "chapter": "04"
+            },
+            {
+              "title": "A rotação LL em C",
+              "kind": "Código",
+              "prompt": "NO tem apenas chave, esq e dir. Implemente NO *rotacaoLL(NO *p), assumindo p e p->esq existentes. A questão não pede campo de altura.",
+              "hint": "Guarde o filho que vai subir antes de alterar qualquer ponteiro.",
+              "steps": [
+                "u é o esquerdo de p.",
+                "A antiga subárvore direita de u passa para a esquerda de p.",
+                "u vira o novo topo local e deve ser retornado."
+              ],
+              "answer_code": "NO *rotacaoLL(NO *p) {\n    NO *u = p->esq;\n    p->esq = u->dir;\n    u->dir = p;\n    return u;\n}",
+              "exam": "prova-arvores · questão 5",
+              "id": "ED-042",
+              "topic": "avl-rotacoes",
+              "chapter": "04"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "avl-atualizacoes",
+          "title": "Inserção e remoção: a volta também faz parte",
+          "objective": "Atualizar alturas e reequilibrar durante o retorno da recursão.",
+          "sections": [
+            [
+              "Desça como ABB, suba verificando",
+              [
+                "A inserção começa com a regra de ABB. No retorno, atualize a altura dos nós visitados e calcule seu fator. Um excesso à esquerda com filho esquerdo de fator ≤0 usa giro à direita; com filho de fator >0 usa giro duplo LR. O caso à direita é simétrico.",
+                "Na inserção, o primeiro reequilíbrio no ancestral mais próximo do novo nó resolve o excesso causado pela inserção; os retornos ainda precisam manter os campos corretos."
+              ]
+            ],
+            [
+              "A exclusão pode propagar perda de altura",
+              [
+                "Exclua como ABB e volte atualizando. Uma subárvore que perde altura pode desbalancear um ancestral e, após a rotação, ainda provocar outro reequilíbrio acima.",
+                "Na remoção, o filho do lado alto pode ter fator zero. A escolha de rotação deve incluir esse caso: excesso −2 com filho de fator 0 usa giro simples à direita. Não copie cegamente condições feitas só para inserção."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: inserir 15 na árvore 40(20(10,30),80)",
+            [
+              "A inserção coloca 15 como direito de 10. O nó 40 passa a ter excesso à esquerda; seu filho 20 é mais alto à esquerda: caso LL no nó 40.",
+              "Um giro à direita em 40 produz raiz 20, com 10(sem esquerdo,15) à esquerda e 40(30,80) à direita. A ordem em ordem continua 10,15,20,30,40,80."
+            ]
+          ],
+          "invariant": "Após retornar de uma chamada, a raiz devolvida representa uma ABB balanceada com altura armazenada correta.",
+          "cost": "O(log n) por atualização; no máximo O(log n) ancestrais e trabalho O(1) em cada um.",
+          "caution": "Em exclusão, o fator do filho igual a zero é um caso real, não uma situação impossível.",
+          "sources": [
+            {
+              "source": "avl",
+              "pages": "41–69",
+              "preview": [
+                41,
+                58
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "A inserção da prova com outro caminho",
+              "kind": "Rastreamento",
+              "prompt": "Na AVL 40(20(10,30),80), insira 35. Indique o primeiro ancestral desbalanceado, o caso e a raiz final do trecho.",
+              "hint": "O novo nó fica à direita de 30.",
+              "steps": [
+                "40 fica com fator −2; 20 tem excesso à direita. Trata-se de LR.",
+                "Gire à esquerda em 20 e depois à direita em 40.",
+                "A raiz final é 30; esquerdo 20(10,NULL), direito 40(35,80)."
+              ],
+              "answer_code": "",
+              "exam": "prova-arvores · questão 1e",
+              "id": "ED-043",
+              "topic": "avl-atualizacoes",
+              "chapter": "04"
+            },
+            {
+              "title": "Filho com fator zero",
+              "kind": "Rastreamento",
+              "prompt": "Árvore AVL: 4 tem esquerdo 2(1,3) e direito 5. Remova 5. Que rotação corrige a raiz? Dê a árvore final.",
+              "hint": "Depois da remoção, o filho esquerdo da raiz continua com fator zero.",
+              "steps": [
+                "4 passa a ter fator −2; seu filho 2 tem fator 0.",
+                "Use giro simples à direita em 4.",
+                "Resultado: 2 com esquerdo 1 e direito 4(3,NULL). A árvore está balanceada."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-044",
+              "topic": "avl-atualizacoes",
+              "chapter": "04"
+            },
+            {
+              "title": "Por que a altura armazenada importa?",
+              "kind": "Complexidade",
+              "prompt": "Uma implementação encontra os fatores chamando altura recursiva em cada nó do caminho da inserção. Pode concluir O(log n) só porque a árvore é AVL?",
+              "hint": "Considere o custo da primeira chamada de altura, perto da raiz.",
+              "steps": [
+                "Não. Calcular altura por percurso perto da raiz pode visitar Θ(n) nós.",
+                "A altura pequena limita o número de níveis, mas não torna cada cálculo recursivo constante.",
+                "Guarde alturas/fatores nos nós e atualize-os a partir dos filhos em O(1) por ancestral."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-045",
+              "topic": "avl-atualizacoes",
+              "chapter": "04"
+            }
+          ],
+          "code": "",
+          "exam": "prova-arvores · questões 1c, 1e e 1f. A política de remoção por predecessor continua valendo antes do reequilíbrio.",
+          "code_language": "C (trecho de referência)"
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "title": "Grafos: modelo e representação",
+      "intro": "Traduza desenhos, matrizes e listas para o mesmo conjunto de vértices e arestas. Declare direção, pesos e convenções antes de calcular.",
+      "topics": [
+        {
+          "id": "grafo-modelo",
+          "title": "Vértices, arestas, caminhos e transposto",
+          "objective": "Distinguir conectividade, direção e custo de um caminho.",
+          "sections": [
+            [
+              "O que uma aresta representa",
+              [
+                "Um grafo G=(V,E) contém vértices e arestas. Em grafo dirigido, (u,v) tem origem u e destino v; a existência de (u,v) não implica (v,u). Em não dirigido, a aresta liga os dois sentidos.",
+                "Grau de saída conta arestas que saem; grau de entrada, as que chegam. Um laço dirigido contribui um para cada grau. Nos exercícios de grafos simples não dirigidos sem laços, a soma dos graus é 2E."
+              ]
+            ],
+            [
+              "Caminho, ciclo e conexão",
+              [
+                "O comprimento de um caminho é seu número de arestas; seu custo, em um grafo ponderado, é a soma dos pesos. Um caminho com menos arestas pode ter custo maior.",
+                "Grafo não dirigido conexo permite chegar de qualquer vértice a qualquer outro. Em dirigido fortemente conexo, há caminho dirigido para todo par ordenado. O transposto inverte todas as arestas dirigidas, preservando seus pesos. Um subgrafo gerador contém todos os vértices, mas pode ter menos arestas."
+              ]
+            ],
+            [
+              "Outras classificações e limites",
+              [
+                "Um grafo simples não possui laços nem arestas paralelas. Um multigrafo admite arestas paralelas; a representação precisa preservar a multiplicidade, se ela fizer parte do problema. Em grafo simples não dirigido sem laços, E≤V(V−1)/2; no dirigido sem laços, E≤V(V−1). O limite V−1 caracteriza árvores, não grafos gerais.",
+                "Um subgrafo induzido por um conjunto de vértices conserva todas as arestas originais entre eles. Um grafo bipartido permite separar os vértices em dois conjuntos sem arestas internas a cada conjunto. Essas classificações são hipóteses adicionais, não consequências de usar matriz ou lista."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: 0→1 (2), 1→2 (3), 0→2 (9)",
+            [
+              "O caminho direto 0→2 tem uma aresta e custo 9. O caminho 0→1→2 tem duas e custo 5.",
+              "O transposto tem 1→0 (2), 2→1 (3), 2→0 (9). O grafo original não é fortemente conexo: 2 não alcança 0."
+            ]
+          ],
+          "invariant": "Toda aresta referencia vértices existentes; direção e pesos fazem parte do dado.",
+          "cost": "Ler uma lista de todas as arestas custa O(V+E) se houver também um percurso pelos vértices.",
+          "caution": "Nas questões com laços, não aplique sem ajuste fórmulas declaradas apenas para grafos simples.",
+          "sources": [
+            {
+              "source": "g02",
+              "pages": "11–57",
+              "preview": [
+                25,
+                45
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Graus de entrada e saída",
+              "kind": "Rastreamento",
+              "prompt": "No dígrafo com arestas 0→0, 0→2, 1→2 e 2→1, dê entrada e saída de cada vértice.",
+              "hint": "O laço 0→0 conta uma vez na entrada e uma na saída de 0.",
+              "steps": [
+                "Vértice 0: entrada 1, saída 2.",
+                "Vértice 1: entrada 1, saída 1.",
+                "Vértice 2: entrada 2, saída 1. As somas de entrada e saída valem 4, igual ao número de arestas."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-046",
+              "topic": "grafo-modelo",
+              "chapter": "05"
+            },
+            {
+              "title": "Inverter não é ignorar setas",
+              "kind": "Construção",
+              "prompt": "Transponha 0→1 (4), 2→1 (7), 1→1 (2). O laço muda?",
+              "hint": "Troque origem por destino em cada aresta.",
+              "steps": [
+                "As arestas ficam 1→0 (4), 1→2 (7) e 1→1 (2).",
+                "O laço continua no mesmo vértice.",
+                "Os pesos não mudam e arestas nos dois sentidos não são criadas automaticamente."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos2 · questão 2",
+              "id": "ED-047",
+              "topic": "grafo-modelo",
+              "chapter": "05"
+            },
+            {
+              "title": "Conexo em qual sentido?",
+              "kind": "Justificativa",
+              "prompt": "O dígrafo 0→1→2 é conectado se ignorarmos as setas. Ele é fortemente conexo? Como obter isso acrescentando uma única aresta?",
+              "hint": "É preciso garantir o caminho de volta.",
+              "steps": [
+                "Não é fortemente conexo: 2 não chega a 0.",
+                "Acrescente 2→0.",
+                "O ciclo dirigido resultante permite alcançar todos os vértices a partir de qualquer um."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-048",
+              "topic": "grafo-modelo",
+              "chapter": "05"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "grafo-matriz",
+          "title": "Matriz: existência, peso e contagens",
+          "objective": "Ler a linha como origem e escrever operações sem contar arestas duas vezes.",
+          "sections": [
+            [
+              "Linhas saem, colunas chegam",
+              [
+                "Em A[u][v], u é origem e v é destino. Na matriz booleana, a célula informa existência. Na ponderada, ela guarda o peso e precisa de uma convenção distinta para ausência. Neste caderno usaremos ∞ (ou um marcador separado) para ausência: uma aresta de peso zero pode existir.",
+                "Para grafos não dirigidos, a matriz é simétrica. Inserir uma aresta entre vértices distintos atualiza as duas posições, mas aumenta numArestas apenas uma vez. Inserir uma aresta já existente não deve aumentar a contagem de arestas."
+              ]
+            ],
+            [
+              "Consultas que aparecem na prova",
+              [
+                "Em grafo simples não dirigido sem laços, o grau de u é a soma de sua linha booleana. Para o maior grau com desempate pelo menor identificador, percorra u em ordem crescente e só troque o melhor quando achar grau estritamente maior.",
+                "Vizinhos em comum são identificadores i para os quais A[u][i] e A[v][i] valem verdadeiro. Para vizinhança a até duas arestas, marque cada vértice alcançado e não conte u nem um vértice duas vezes."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: arestas {0,1}, {0,2}, {1,2}, {2,3}",
+            [
+              "As linhas booleanas são 0110, 1010, 1101, 0010. Os graus são 2,2,3,1 e E=(2+2+3+1)/2=4.",
+              "0 e 1 têm 2 como vizinho em comum. Os vértices a uma ou duas arestas de 0, excluindo 0, são {1,2,3}."
+            ]
+          ],
+          "invariant": "Em não dirigido, A[u][v]=A[v][u]; a contagem lógica de uma aresta não depende das duas células.",
+          "cost": "Espaço O(V²); testar aresta O(1); enumerar vizinhos O(V); calcular todos os graus O(V²).",
+          "caution": "A soma da linha dá grau de saída em dirigido. Para entrada, percorra a coluna.",
+          "sources": [
+            {
+              "source": "g03",
+              "pages": "18–27 e 66–107",
+              "preview": [
+                103
+              ]
+            },
+            {
+              "source": "g04",
+              "pages": "15–24 e 109",
+              "preview": [
+                17
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Leia origem e destino",
+              "kind": "Rastreamento",
+              "prompt": "Matriz ponderada dirigida, ausência ∞: linha 0=[∞,3,∞], linha 1=[∞,∞,0], linha 2=[5,∞,∞]. Liste as arestas e o custo de 0→1→2.",
+              "hint": "Zero na célula 1,2 é peso, não ausência.",
+              "steps": [
+                "Arestas: 0→1 com peso 3; 1→2 com peso 0; 2→0 com peso 5.",
+                "O custo de 0→1→2 é 3+0=3.",
+                "A matriz não é simétrica; não acrescente arestas reversas."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-049",
+              "topic": "grafo-matriz",
+              "chapter": "05"
+            },
+            {
+              "title": "Maior grau com desempate",
+              "kind": "Código",
+              "prompt": "Grafo simples não dirigido e sem laços, bool **A, V≥0. Implemente maiorGrau(A,V), retornando −1 para V=0 e o menor identificador em caso de empate.",
+              "hint": "Percorra os identificadores em ordem crescente e só atualize se o grau superar o melhor.",
+              "steps": [
+                "Inicialize melhor=−1 e melhorGrau=−1.",
+                "Some cada linha inteira.",
+                "Use >, não >=, para conservar o primeiro identificador empatado."
+              ],
+              "answer_code": "int maiorGrau(bool **A, int V) {\n    int melhor = -1, maior = -1;\n    for (int u=0; u<V; ++u) {\n        int grau = 0;\n        for (int v=0; v<V; ++v) grau += A[u][v] ? 1 : 0;\n        if (grau > maior) { maior = grau; melhor = u; }\n    }\n    return melhor;\n}",
+              "exam": "prova-grafos · questão 3a; prova-grafos2 · questão 7a",
+              "id": "ED-050",
+              "topic": "grafo-matriz",
+              "chapter": "05"
+            },
+            {
+              "title": "Vizinhos em comum",
+              "kind": "Código",
+              "prompt": "Grafo simples não dirigido sem laços em bool **A; u e v válidos. Conte identificadores que são vizinhos de ambos.",
+              "hint": "Uma posição por candidato evita dupla contagem.",
+              "steps": [
+                "Percorra i de 0 a V−1.",
+                "Conte se as duas células forem verdadeiras.",
+                "O custo é O(V) e o espaço auxiliar é O(1)."
+              ],
+              "answer_code": "int comuns(bool **A, int V, int u, int v) {\n    int total = 0;\n    for (int i=0; i<V; ++i)\n        if (A[u][i] && A[v][i]) ++total;\n    return total;\n}",
+              "exam": "prova-grafos2 · questão 7b",
+              "id": "ED-051",
+              "topic": "grafo-matriz",
+              "chapter": "05"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "grafo-listas",
+          "title": "Listas de adjacências e escolha de representação",
+          "objective": "Converter representações e analisar o custo em grafos esparsos e densos.",
+          "sections": [
+            [
+              "Uma lista para cada origem",
+              [
+                "A[u] aponta para os vizinhos que saem de u. Em grafo dirigido, cada aresta aparece uma vez. Em não dirigido sem laços, cada aresta aparece nas duas listas, uma por sentido. A quantidade lógica de arestas continua sendo E.",
+                "Se as listas estão ordenadas por identificador, essa ordem determina desempates nos percursos. A ordem de inserção não pode ser usada no lugar da ordem que o enunciado especifica."
+              ]
+            ],
+            [
+              "Espaço e consultas",
+              [
+                "Listas usam O(V+E) espaço; matriz usa O(V²). Para enumerar vizinhos de u, a lista custa O(grau de saída de u); a matriz lê V células.",
+                "Testar uma aresta em uma lista simples pode custar O(grau(u)); uma matriz faz isso em O(1). Para grafos esparsos, listas economizam espaço e evitam ler muitas ausências; para consultas frequentes de existência em grafos densos, a matriz pode ser conveniente."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: lista dirigida ponderada",
+            [
+              "A[0]: (2,1),(3,4); A[1]: (0,6); A[2]: vazia; A[3]: (2,2). São quatro arestas.",
+              "A matriz tem pesos 1 em [0][2], 4 em [0][3], 6 em [1][0], 2 em [3][2]; as outras posições não têm aresta. A[2] vazia não significa que ninguém chega a 2."
+            ]
+          ],
+          "invariant": "Cada item de A[u] representa uma aresta cuja origem é u e cujo destino é o identificador armazenado.",
+          "cost": "Percorrer todas as listas: O(V+E); conversão para matriz inclui inicializar V² células, portanto O(V²+E).",
+          "caution": "Não use o índice da lista como destino. Ele identifica a origem.",
+          "sources": [
+            {
+              "source": "g05",
+              "pages": "4–15 e 124–135",
+              "preview": [
+                9
+              ]
+            },
+            {
+              "source": "prova-grafos",
+              "pages": "1",
+              "preview": [
+                1
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Decodifique a impressão",
+              "kind": "Rastreamento",
+              "prompt": "A[0]: 0(1),2(4); A[1]: 2(3); A[2]: 1(5). O grafo é dirigido e ponderado. Liste as arestas e diga se 0 é alcançável a partir de 2.",
+              "hint": "O laço em 0 não cria entrada a partir de outro vértice.",
+              "steps": [
+                "Arestas: 0→0 peso1; 0→2 peso4; 1→2 peso3; 2→1 peso5.",
+                "A partir de 2, só se alcançam 1 e 2.",
+                "0 não é alcançável a partir de 2."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos · questão 1",
+              "id": "ED-052",
+              "topic": "grafo-listas",
+              "chapter": "05"
+            },
+            {
+              "title": "Qual representação escolher?",
+              "kind": "Complexidade",
+              "prompt": "Um grafo tem V=10.000 e E=20.000. Compare os números de células da matriz e de registros de arestas da lista dirigida, sem calcular bytes de ponteiros.",
+              "hint": "A ordem de grandeza é a informação central.",
+              "steps": [
+                "A matriz possui 100.000.000 células.",
+                "A lista dirigida guarda 20.000 registros de arestas e 10.000 cabeçalhos.",
+                "As listas são adequadas para enumerar vizinhos neste grafo esparso; consultas de existência podem exigir percorrer uma lista."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-053",
+              "topic": "grafo-listas",
+              "chapter": "05"
+            },
+            {
+              "title": "Extrair todas as arestas",
+              "kind": "Código",
+              "prompt": "Em um dígrafo ponderado, Grafo tem int numVertices,numArestas e ElemLista **A. Cada item tem vertice,peso,prox. Aresta tem origem,destino,peso. Retorne um vetor alocado com todas as arestas ou NULL se E=0 ou a alocação falhar. Assuma os contadores consistentes.",
+              "hint": "A origem vem do laço externo; o destino vem do item da lista.",
+              "steps": [
+                "Aloque E registros uma vez.",
+                "Percorra cada lista e preencha origem, destino e peso.",
+                "O chamador deve liberar o vetor retornado. Em não dirigido seria preciso outra política para evitar duplicatas."
+              ],
+              "answer_code": "Aresta *arranjoDeArestas(Grafo *g) {\n    if (g->numArestas == 0) return NULL;\n    Aresta *a = malloc(sizeof *a * g->numArestas);\n    if (!a) return NULL;\n    int k = 0;\n    for (int u=0; u<g->numVertices; ++u)\n        for (ElemLista *p=g->A[u]; p; p=p->prox) {\n            a[k].origem=u; a[k].destino=p->vertice;\n            a[k].peso=p->peso; ++k;\n        }\n    return a;\n}",
+              "exam": "prova-grafos2 · questão 11",
+              "id": "ED-054",
+              "topic": "grafo-listas",
+              "chapter": "05"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "title": "DFS, BFS e aplicações",
+      "intro": "Acompanhe a fronteira da busca e a ordem dos vizinhos. Depois use os resultados para reconhecer ciclos, componentes e dependências.",
+      "topics": [
+        {
+          "id": "dfs",
+          "title": "Busca em profundidade: cores e tempos",
+          "objective": "Rastrear descoberta, término e predecessores sem confundir a árvore de busca com o grafo.",
+          "sections": [
+            [
+              "Um caminho por vez",
+              [
+                "DFS visita um vértice e explora recursivamente um vizinho ainda não descoberto antes de continuar os demais. Branco significa não descoberto; cinza, chamada ativa; preto, exploração concluída.",
+                "Ao descobrir u, incremente o relógio e guarde d[u]. Ao terminar todos os seus vizinhos, incremente de novo e guarde f[u]. ant[v]=u é atribuído somente quando v é descoberto a partir de u."
+              ]
+            ],
+            [
+              "A floresta cobre o que uma chamada não alcança",
+              [
+                "Uma DFS iniciada em um vértice cobre apenas os alcançáveis a partir dele. Para cobrir todo o grafo, o laço externo inicia uma nova árvore em cada vértice ainda branco.",
+                "Para uma resposta única, usaremos raízes em ordem crescente e vizinhos em ordem crescente. Em um grafo dirigido, uma aresta para um vértice cinza indica ciclo. Em não dirigido, a aresta de volta ao pai não é evidência de um ciclo simples."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: não dirigido, arestas 0–1,0–2,1–3,2–3",
+            [
+              "Comece em 0. A ordem de descoberta é 0,1,3,2, pois 3 é explorado antes de a chamada de 0 chegar ao vizinho 2.",
+              "Com relógio começando em 0, d=[1,2,4,3] e f=[8,7,5,6]. Os pais são [−1,0,3,1]. Cada intervalo de um descendente está dentro do de seu ancestral."
+            ]
+          ],
+          "invariant": "Um vértice fica cinza exatamente durante sua chamada ativa; cada um recebe descoberta e término uma vez.",
+          "cost": "Listas: O(V+E); matriz: O(V²); pilha e vetores auxiliares O(V).",
+          "caution": "O término é registrado na volta da chamada, não imediatamente após descobrir o último vizinho.",
+          "sources": [
+            {
+              "source": "g06",
+              "pages": "7–28",
+              "preview": [
+                27
+              ]
+            },
+            {
+              "source": "prova-grafos2",
+              "pages": "2–3",
+              "preview": [
+                2
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Tempos em uma cadeia ramificada",
+              "kind": "Rastreamento",
+              "prompt": "Dígrafo: 0→1,0→2,1→3. Raízes e vizinhos crescentes. Relógio inicia 0 e aumenta na descoberta e no término. Dê d e f.",
+              "hint": "Conclua 3 e depois 1 antes de descobrir 2.",
+              "steps": [
+                "Descobertas: d0=1,d1=2,d3=3. Termine 3 em4 e 1 em5.",
+                "Depois descubra 2 em6, termine em7 e termine 0 em8.",
+                "Em ordem de vértices: d=[1,2,6,3], f=[8,5,7,4]."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos2 · questão 5",
+              "id": "ED-055",
+              "topic": "dfs",
+              "chapter": "06"
+            },
+            {
+              "title": "Aresta ao pai",
+              "kind": "Justificativa",
+              "prompt": "No grafo não dirigido com apenas 0–1, DFS em 0 visita 1. Em 1, o vizinho 0 está cinza. Isso prova um ciclo?",
+              "hint": "Uma aresta não dirigida aparece nas duas listas.",
+              "steps": [
+                "Não. A ligação 1→0 é a visão reversa da mesma aresta de árvore.",
+                "Em grafo simples não dirigido, a detecção deve ignorar a aresta ao pai.",
+                "Em um dígrafo, uma aresta para ancestral cinza realmente fecha um ciclo dirigido."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-056",
+              "topic": "dfs",
+              "chapter": "06"
+            },
+            {
+              "title": "Complete a visita",
+              "kind": "Código",
+              "prompt": "Considere listas de destinos ordenados e vetores cor,d,f,ant já alocados. Escreva visita para cores 0,1,2 e relógio por ponteiro.",
+              "hint": "O tempo deve ser compartilhado entre as chamadas.",
+              "steps": [
+                "Marque descoberta antes de explorar vizinhos.",
+                "Atribua o predecessor apenas a um vizinho branco.",
+                "Marque o término depois do laço completo."
+              ],
+              "answer_code": "void visita(Grafo *g, int u, int *tempo,\n            int cor[], int d[], int f[], int ant[]) {\n    cor[u]=1; d[u]=++*tempo;\n    for (ElemLista *p=g->A[u]; p; p=p->prox) {\n        int v=p->vertice;\n        if (cor[v]==0) {\n            ant[v]=u;\n            visita(g,v,tempo,cor,d,f,ant);\n        }\n    }\n    cor[u]=2; f[u]=++*tempo;\n}",
+              "exam": "",
+              "id": "ED-057",
+              "topic": "dfs",
+              "chapter": "06"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "bfs",
+          "title": "Busca em largura: distância por arestas",
+          "objective": "Usar a fila para descobrir distâncias mínimas em grafos sem pesos.",
+          "sections": [
+            [
+              "Uma camada antes da seguinte",
+              [
+                "BFS inicia a origem s com distância 0 e a enfileira. Ao retirar u, cada vizinho v ainda não descoberto recebe d[v]=d[u]+1, ant[v]=u e entra na fila.",
+                "Marque v como descoberto ao enfileirar. Se esperar até retirar, dois predecessores poderão enfileirar o mesmo vértice e alterar sua relação de descoberta."
+              ]
+            ],
+            [
+              "O que a distância significa",
+              [
+                "As camadas são processadas em ordem não decrescente de distância. Por isso, a primeira descoberta encontra o menor número de arestas desde s.",
+                "Isso não resolve custo mínimo com pesos diferentes. Vértices inalcançáveis mantêm distância −1 ou ∞, conforme o contrato. Uma floresta de BFS com várias origens cobre o grafo, mas não produz uma única tabela de distâncias desde s para componentes inalcançáveis."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: as mesmas arestas da DFS",
+            [
+              "No grafo 0–1,0–2,1–3,2–3, com vizinhos crescentes, a fila começa [0]. Retirar 0 descobre 1 e 2: fila [1,2].",
+              "Retirar 1 descobre 3; retirar 2 encontra 3 já descoberto. A ordem é 0,1,2,3, d=[0,1,1,2] e ant=[−1,0,0,1]."
+            ]
+          ],
+          "invariant": "Cada vértice entra na fila no máximo uma vez e sua distância é definida na descoberta.",
+          "cost": "Listas O(V+E); matriz O(V²); fila e vetores O(V).",
+          "caution": "Uma ordem de visita diferente pode ser válida se a ordem dos vizinhos não foi fixada.",
+          "sources": [
+            {
+              "source": "g08",
+              "pages": "5–14 e 29–60",
+              "preview": [
+                53
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Fila e predecessores",
+              "kind": "Rastreamento",
+              "prompt": "Dígrafo: 0→1,0→2,1→3,2→3,3→4. BFS começa em 0 e examina vizinhos crescentes. Dê d e ant.",
+              "hint": "Quando 2 é retirado, 3 já foi descoberto por 1.",
+              "steps": [
+                "d=[0,1,1,2,3].",
+                "ant=[−1,0,0,1,3].",
+                "O caminho para 4 recuperado pelos pais é 0→1→3→4."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos2 · questão 6",
+              "id": "ED-058",
+              "topic": "bfs",
+              "chapter": "06"
+            },
+            {
+              "title": "Menos arestas não é menor peso",
+              "kind": "Contraexemplo",
+              "prompt": "Há arestas 0→2 peso10, 0→1 peso1 e 1→2 peso1. BFS resolve o caminho de menor custo até 2?",
+              "hint": "Compare o caminho de uma aresta com o de duas.",
+              "steps": [
+                "BFS encontra o menor número de arestas e pode escolher 0→2, com custo10.",
+                "O caminho ponderado mínimo é 0→1→2, custo2.",
+                "Para pesos não negativos arbitrários, use Dijkstra, não a distância de BFS."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-059",
+              "topic": "bfs",
+              "chapter": "06"
+            },
+            {
+              "title": "Por que marcar na entrada?",
+              "kind": "Depuração",
+              "prompt": "0 aponta para 1 e 2; ambos apontam para 3. Uma BFS marca visitado somente ao retirar da fila. Qual duplicação pode ocorrer e como corrigir?",
+              "hint": "Considere a fila depois de retirar 1 e antes de retirar 2.",
+              "steps": [
+                "1 enfileira 3, mas 3 ainda não está marcado.",
+                "2 também enfileira 3; a fila pode conter o mesmo vértice duas vezes.",
+                "Marque e atribua ant/distância no momento de enfileirar, incluindo a origem."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-060",
+              "topic": "bfs",
+              "chapter": "06"
+            }
+          ],
+          "code": "para todo v: dist[v] ← −1; pred[v] ← −1\ndist[s] ← 0; enfileire(s)\nenquanto a fila não está vazia:\n    u ← retire o primeiro\n    para cada vizinho v de u em ordem crescente:\n        se dist[v] = −1:\n            dist[v] ← dist[u] + 1\n            pred[v] ← u\n            enfileire(v)",
+          "exam": "",
+          "code_language": "Pseudocódigo · contratos descritos no texto"
+        },
+        {
+          "id": "aplicacoes-dfs",
+          "title": "Ciclos, topologia e componentes",
+          "objective": "Escolher o significado correto de uma floresta e usar o transposto na conectividade forte.",
+          "sections": [
+            [
+              "DAG e ordem topológica",
+              [
+                "Uma ordem topológica coloca cada origem antes do destino de suas arestas. Ela existe exatamente em dígrafos acíclicos. É possível obter uma ordem por tempos de término decrescentes de DFS, após verificar que não há ciclo dirigido.",
+                "Se houver ciclo, ordenar números de término não transforma o resultado em uma ordem topológica válida. Confira cada aresta u→v na resposta final: u deve estar antes de v."
+              ]
+            ],
+            [
+              "Componente conexa e fortemente conexa",
+              [
+                "Em não dirigido, cada nova raiz de uma busca completa identifica uma componente conexa. Em dirigido, contar árvores de uma DFS comum não fornece, em geral, o número de componentes fortemente conexas.",
+                "No método de Kosaraju: faça DFS em G e registre os términos; construa G transposto; faça novas buscas em G transposto, com raízes em ordem decrescente dos términos da primeira etapa. Cada árvore dessa segunda fase identifica uma componente fortemente conexa."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: 0↔1, 1→2, 2↔3",
+            [
+              "{0,1} é fortemente conexa e {2,3} também. Não há caminho de volta de {2,3} para {0,1}, portanto são duas componentes fortes.",
+              "Ao comprimir cada componente em um vértice, resta uma aresta do grupo {0,1} para {2,3}; esse grafo de componentes é um DAG."
+            ]
+          ],
+          "invariant": "Na segunda fase de Kosaraju, só os tempos da primeira DFS determinam a ordem das raízes.",
+          "cost": "DFS+transposição+DFS em listas custa O(V+E); a ordenação por término pode ser armazenada diretamente no retorno.",
+          "caution": "Conectividade forte exige caminhos nos dois sentidos, não apenas conectividade ao apagar as setas.",
+          "sources": [
+            {
+              "source": "g07",
+              "pages": "2–54",
+              "preview": [
+                2
+              ]
+            },
+            {
+              "source": "g07b",
+              "pages": "4–27 e 41–92",
+              "preview": [
+                65,
+                91
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Verifique a ordem proposta",
+              "kind": "Justificativa",
+              "prompt": "DAG com 0→2,1→2,2→3. As ordens [0,1,2,3] e [1,0,2,3] são válidas? E [0,2,1,3]?",
+              "hint": "Teste se a origem de cada aresta vem antes de seu destino.",
+              "steps": [
+                "As duas primeiras são válidas; não existe restrição entre 0 e 1.",
+                "[0,2,1,3] viola 1→2.",
+                "Uma ordem topológica não é necessariamente única."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-061",
+              "topic": "aplicacoes-dfs",
+              "chapter": "06"
+            },
+            {
+              "title": "Identifique os grupos fortes",
+              "kind": "Rastreamento",
+              "prompt": "Dígrafo: 0→1,1→0,1→2,2→3,3→2,3→4. Liste as componentes fortemente conexas.",
+              "hint": "Separe alcançabilidade de ida e de volta.",
+              "steps": [
+                "0 e 1 se alcançam mutuamente: {0,1}.",
+                "2 e 3 se alcançam mutuamente: {2,3}.",
+                "4 não retorna aos outros: {4}. Há três componentes fortes."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-062",
+              "topic": "aplicacoes-dfs",
+              "chapter": "06"
+            },
+            {
+              "title": "DFS única não conta componentes fortes",
+              "kind": "Contraexemplo",
+              "prompt": "No dígrafo 0→1, uma DFS completa começa em 0 e produz uma árvore. Quantas componentes fortes existem? O que essa comparação ensina?",
+              "hint": "1 consegue alcançar 0?",
+              "steps": [
+                "Existem duas componentes fortes: {0} e {1}.",
+                "A DFS de 0 alcança 1, mas não exige que o caminho de volta exista.",
+                "O número de árvores de uma única DFS dirigida não é um contador geral de componentes fortes."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-063",
+              "topic": "aplicacoes-dfs",
+              "chapter": "06"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "title": "Prioridades e árvores geradoras mínimas",
+      "intro": "Diferencie o menor item de uma fila, a menor ligação que conecta uma árvore e o menor caminho desde uma origem.",
+      "topics": [
+        {
+          "id": "heap",
+          "title": "Fila de prioridade e heap binário",
+          "objective": "Executar operações de heap e separar sua propriedade da ordem de uma ABB.",
+          "sections": [
+            [
+              "A forma e a ordem do heap",
+              [
+                "Um heap binário é uma árvore completa ou quase completa, preenchida por níveis da esquerda para a direita. Em heap mínimo, a chave do pai é menor ou igual às dos filhos; em heap máximo, é maior ou igual. Isso não ordena toda a subárvore esquerda em relação à direita.",
+                "No vetor com índices a partir de zero: pai(i)=floor((i−1)/2) para i>0, esquerdo=2i+1 e direito=2i+2. Só acesse filhos cujos índices sejam menores que n."
+              ]
+            ],
+            [
+              "Subir e descer",
+              [
+                "Inserir adiciona no final físico e sobe enquanto violar a relação com o pai. Extrair o mínimo retira a raiz, põe o último no lugar e desce trocando com o menor filho.",
+                "Construir um heap de baixo para cima custa O(n), pois muitos nós estão perto das folhas e descem pouco. Inserir n elementos um a um pode custar O(n log n). Uma fila de prioridade também pode usar um vetor ordenado, com outros custos por operação."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: inserir 2 no heap [3,6,5,9,8]",
+            [
+              "Acrescente 2 no índice 5: seu pai é o índice 2, chave5. Troque 2 com5.",
+              "Agora 2 está no índice2, cujo pai é a raiz3. Troque novamente. Resultado: [2,6,3,9,8,5]. A raiz contém o mínimo, mas o vetor não está ordenado."
+            ]
+          ],
+          "invariant": "Heap mínimo: A[pai(i)]≤A[i] para todo i>0. A forma completa é dada pelo trecho A[0..n−1].",
+          "cost": "Consultar mínimo O(1); inserir/extrair O(log n); construir por heapify de baixo para cima O(n).",
+          "caution": "Em um heap máximo, o mínimo não está necessariamente numa folha específica; para encontrá-lo em geral é preciso examinar candidatos.",
+          "sources": [
+            {
+              "source": "g09",
+              "pages": "2–10 e 32–56",
+              "preview": [
+                32,
+                56
+              ]
+            },
+            {
+              "source": "prova-arvores",
+              "pages": "3",
+              "preview": [
+                3
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Retire o mínimo",
+              "kind": "Rastreamento",
+              "prompt": "Extraia o mínimo de [2,4,3,9,7,8] e apresente o heap final, escolhendo sempre o menor filho.",
+              "hint": "Leve 8 à raiz e acompanhe sua descida.",
+              "steps": [
+                "Sai2; o vetor temporário vira [8,4,3,9,7].",
+                "Compare filhos4 e3 e troque8 com3.",
+                "Resultado: [3,4,8,9,7]. O nó8 está sem filhos válidos."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-064",
+              "topic": "heap",
+              "chapter": "07"
+            },
+            {
+              "title": "Heap não é ABB",
+              "kind": "Contraexemplo",
+              "prompt": "O vetor [9,7,8] é um heap máximo? A árvore correspondente é uma ABB?",
+              "hint": "Compare a raiz com seu filho direito e com a propriedade de ABB.",
+              "steps": [
+                "É heap máximo: 9≥7 e 9≥8.",
+                "Não é ABB: o filho direito8 deveria ser maior que9.",
+                "O heap organiza prioridades entre pais e filhos; ABB organiza intervalos de chaves."
+              ],
+              "answer_code": "",
+              "exam": "prova-arvores · questão 3",
+              "id": "ED-065",
+              "topic": "heap",
+              "chapter": "07"
+            },
+            {
+              "title": "Por que construção linear?",
+              "kind": "Complexidade",
+              "prompt": "Explique por que construir por heapify não deve ser analisado apenas como n operações de custo log n.",
+              "hint": "A maioria dos nós tem pouca altura.",
+              "steps": [
+                "Folhas não descem; nós logo acima delas descem no máximo um nível.",
+                "Há no máximo cerca de n/2^(k+1) nós de altura k.",
+                "Somar O(n·Σ k/2^(k+1)) dá O(n), pois a soma converge. O limite O(n log n) seria válido, mas menos preciso."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-066",
+              "topic": "heap",
+              "chapter": "07"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "prim",
+          "title": "Prim: a menor aresta que cruza o corte",
+          "objective": "Construir uma AGM em grafo não dirigido, conexo e ponderado.",
+          "sections": [
+            [
+              "O objetivo é conectar todos com custo total mínimo",
+              [
+                "Uma árvore geradora contém todos os vértices, não tem ciclos e usa V−1 arestas quando V>0. A AGM minimiza a soma dos pesos dessas arestas. Isso é diferente de minimizar a distância de uma origem até cada vértice.",
+                "Prim mantém um conjunto S já conectado. Para cada v fora de S, chave[v] é o menor peso de uma aresta entre S e v; pai[v] guarda sua outra ponta. Escolha a menor chave e atualize pelos novos vizinhos."
+              ]
+            ],
+            [
+              "A propriedade do corte explica a escolha",
+              [
+                "As arestas entre S e V−S cruzam um corte. Uma de peso mínimo nesse corte pode ser incluída em alguma AGM compatível com as escolhas anteriores. Esse é o motivo de a escolha gulosa funcionar.",
+                "Pesos negativos não impedem AGM. Se o grafo for desconexo, não existe uma única árvore geradora abrangendo todos; uma versão que reinicia pode devolver uma floresta geradora mínima."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: 0–1:5, 0–2:12, 1–2:9, 1–3:10, 2–3:4",
+            [
+              "Comece em0. Escolha 0–1 de peso5. Agora o menor cruzamento é 1–2 de peso9.",
+              "Com2 incluído, a ligação 2–3 de peso4 melhora a chave de3. A AGM tem arestas 0–1,1–2,2–3 e custo18. Observe que a sequência de pesos escolhidos 5,9,4 não precisa ser crescente."
+            ]
+          ],
+          "invariant": "chave[v] mede uma única aresta entre a árvore atual e v; não é distância acumulada desde a raiz.",
+          "cost": "Matriz com seleção linear O(V²). Listas com heap indexado: O((V+E)log V).",
+          "caution": "Prim e Dijkstra podem ter código parecido, mas atualizam chaves com significados diferentes.",
+          "sources": [
+            {
+              "source": "g10",
+              "pages": "2–11 e 36–54",
+              "preview": [
+                11
+              ]
+            },
+            {
+              "source": "prova-grafos",
+              "pages": "1",
+              "preview": [
+                1
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "AGM em quatro vértices",
+              "kind": "Rastreamento",
+              "prompt": "Não dirigido: A–B:2,A–C:6,B–C:3,B–D:5,C–D:1. Execute Prim desde A. Dê arestas e soma.",
+              "hint": "Atualize a chave de D quando C entrar.",
+              "steps": [
+                "Escolha A–B peso2. As chaves passam a C=3,D=5.",
+                "Escolha B–C peso3. A aresta C–D peso1 melhora D.",
+                "Escolha C–D peso1. Custo total6."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-067",
+              "topic": "prim",
+              "chapter": "07"
+            },
+            {
+              "title": "Árvore de caminhos não é AGM",
+              "kind": "Contraexemplo",
+              "prompt": "Triângulo não dirigido: A–B:2,A–C:2,B–C:1. Compare a AGM com a árvore de caminhos mínimos desde A.",
+              "hint": "Os dois caminhos diretos desde A já são mínimos.",
+              "steps": [
+                "A árvore de caminhos mínimos usa A–B e A–C, soma4.",
+                "Uma AGM usa B–C e uma das arestas de peso2, soma3.",
+                "O objetivo da AGM é a soma global; o dos caminhos é a distância de A para cada destino."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-068",
+              "topic": "prim",
+              "chapter": "07"
+            },
+            {
+              "title": "Duas prioridades diferentes",
+              "kind": "Depuração",
+              "prompt": "Em Prim, alguém atualiza chave[v] para chave[u]+peso(u,v). Qual o problema e qual a expressão correta?",
+              "hint": "A chave de Prim não é uma distância desde a origem.",
+              "steps": [
+                "A soma acumulada altera o problema para um critério de caminhos.",
+                "Em Prim, compare peso(u,v) com chave[v], desde que v ainda esteja fora de S.",
+                "Se for menor, faça chave[v]=peso(u,v) e pai[v]=u."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-069",
+              "topic": "prim",
+              "chapter": "07"
+            }
+          ],
+          "code": "para todo v: chave[v] ← ∞; pai[v] ← −1; dentro[v] ← falso\nchave[s] ← 0\nrepita V vezes:\n    u ← vértice fora da árvore com menor chave\n    se chave[u] = ∞: informe que o grafo é desconexo e pare\n    dentro[u] ← verdadeiro\n    para cada aresta não dirigida u—v de peso w:\n        se não dentro[v] e w < chave[v]:\n            chave[v] ← w; pai[v] ← u\nresposta ← arestas (pai[v],v) para v ≠ s",
+          "exam": "",
+          "code_language": "Pseudocódigo · contratos descritos no texto"
+        },
+        {
+          "id": "kruskal",
+          "title": "Kruskal e conjuntos disjuntos",
+          "objective": "Selecionar arestas por peso e detectar se uma ligação fecharia ciclo.",
+          "sections": [
+            [
+              "Ordene as ligações, não os vértices",
+              [
+                "Kruskal começa com cada vértice em uma componente separada. Examina as arestas em ordem não decrescente de peso. Aceita (u,v) se suas componentes são diferentes; então une os grupos.",
+                "Rejeite uma aresta cujas pontas já estão no mesmo grupo, pois ela fecharia um ciclo com as arestas aceitas. Em grafo conexo, pare ao aceitar V−1 arestas; em desconexo, o resultado é uma floresta."
+              ]
+            ],
+            [
+              "Find e união",
+              [
+                "Uma estrutura de conjuntos disjuntos mantém representantes de grupos. find(u) identifica o grupo de u; union une dois grupos. Uma implementação eficiente usa compressão de caminhos e união por tamanho ou rank.",
+                "Pesos iguais podem levar a diferentes AGMs com a mesma soma. Pesos todos distintos garantem AGM única em grafo conexo. Havendo empates, fixe uma ordem secundária para obter rastreamento reproduzível."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: o mesmo grafo de Prim",
+            [
+              "Ordene pesos: 2–3:4; 0–1:5; 1–2:9; 1–3:10; 0–2:12.",
+              "Aceite as três primeiras: cada uma une componentes diferentes. Com quatro vértices, já há três arestas e o custo é18. Uma eventual 1–3 fecharia ciclo e não entraria."
+            ]
+          ],
+          "invariant": "As arestas aceitas sempre formam uma floresta; cada união diminui em um a quantidade de componentes.",
+          "cost": "Ordenação O(E log E); com união por rank+compressão, as operações de conjuntos acrescentam O(E α(V)) amortizado.",
+          "caution": "Aresta de peso negativo não é problema para AGM; ciclo, sim.",
+          "sources": [
+            {
+              "source": "g11",
+              "pages": "5–25 e 51–77",
+              "preview": [
+                5,
+                25
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Aceite ou rejeite",
+              "kind": "Rastreamento",
+              "prompt": "Arestas de um grafo não dirigido, já ordenadas: 0–1:1,1–2:2,0–2:3,2–3:4. Execute Kruskal e dê as arestas escolhidas e o custo.",
+              "hint": "Antes da terceira aresta, 0 e 2 já estão ligados.",
+              "steps": [
+                "Aceite 0–1 e 1–2; elas unem grupos distintos.",
+                "Rejeite 0–2, pois fecharia o ciclo 0–1–2–0.",
+                "Aceite 2–3. Soma=1+2+4=7."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-070",
+              "topic": "kruskal",
+              "chapter": "07"
+            },
+            {
+              "title": "Empates e unicidade",
+              "kind": "Justificativa",
+              "prompt": "Um triângulo tem todas as arestas com peso1. Quantas AGMs diferentes possui e qual o custo de cada uma?",
+              "hint": "Qualquer aresta pode ser a única excluída.",
+              "steps": [
+                "Qualquer par de arestas conecta os três vértices sem ciclo.",
+                "Há três pares possíveis, portanto três AGMs.",
+                "Todas têm custo2. Um algoritmo correto não precisa devolver sempre a mesma AGM se o desempate não foi fixado."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-071",
+              "topic": "kruskal",
+              "chapter": "07"
+            },
+            {
+              "title": "A falha do contador",
+              "kind": "Depuração",
+              "prompt": "Uma versão de Kruskal aceita as V−1 arestas de menor peso sem verificar componentes. Por que isso pode falhar? Use um exemplo com quatro vértices.",
+              "hint": "Faça as três mais baratas formarem um triângulo.",
+              "steps": [
+                "Use 0–1:1,1–2:2,0–2:3,2–3:10.",
+                "As três menores fecham ciclo entre 0,1,2 e deixam3 isolado.",
+                "O correto rejeita0–2 e aceita2–3; é preciso testar componentes."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-072",
+              "topic": "kruskal",
+              "chapter": "07"
+            }
+          ],
+          "code": "ordene as arestas por (peso, menor ponta, maior ponta)\ncrie um conjunto separado para cada vértice\nresposta ← vazia\npara cada aresta (u,v,w) nessa ordem:\n    se find(u) ≠ find(v):\n        acrescente a aresta à resposta\n        union(u,v)\nse resposta tem menos de V−1 arestas: ela é uma floresta\nsenão: ela é uma árvore geradora mínima",
+          "exam": "",
+          "code_language": "Pseudocódigo · contratos descritos no texto"
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "title": "Caminhos mínimos e predecessores",
+      "intro": "Escolha o algoritmo pelas hipóteses sobre pesos e pelo conjunto de origens. Leia a distância e reconstrua o caminho como respostas diferentes.",
+      "topics": [
+        {
+          "id": "relaxamento",
+          "title": "Relaxar e reconstruir",
+          "objective": "Interpretar distâncias, predecessores e a ausência de caminho.",
+          "sections": [
+            [
+              "Uma melhora tem de vir de um caminho conhecido",
+              [
+                "Inicialize dist[s]=0 e os demais com ∞. Se dist[u] é finita e dist[u]+w(u,v)<dist[v], atualize dist[v] e pred[v]=u. Essa operação se chama relaxamento.",
+                "dist[v] é uma estimativa do custo desde a origem; pred[v] é o vértice imediatamente anterior a v no caminho escolhido. O predecessor não é o próximo vértice depois de v nem a própria distância."
+              ]
+            ],
+            [
+              "Reconstrua de trás para a frente",
+              [
+                "Para o destino t, siga t,pred[t],pred[pred[t]],… até a origem. Inverta essa sequência para escrever o caminho na ordem do percurso.",
+                "Os marcadores da origem variam: a prova usa pred[s]=s em algumas tabelas; aqui os algoritmos podem usar −1. Pare ao atingir s, antes de seguir esse marcador. Se dist[t]=∞, não há caminho e a cadeia não deve ser percorrida. Em resultados sem ciclo negativo relevante, uma cadeia válida não precisa repetir vértices."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: distância [0,3.5,1,3,7,7] e pred [0,2,0,2,2,3]",
+            [
+              "Para destino5, siga5→3→2→0. Inverta: 0→2→3→5. O custo total é dist[5]=7.",
+              "Para destino1, siga1→2→0. O caminho é0→2→1, custo3,5. Os valores dos predecessores não devem ser somados para calcular a distância."
+            ]
+          ],
+          "invariant": "Todo predecessor definido decorre de uma melhora por uma aresta real do grafo.",
+          "cost": "Um relaxamento O(1); reconstruir um caminho simples pode custar O(V) e guardar O(V) vértices.",
+          "caution": "Distância finita não informa todas as rotas ótimas; o vetor pred guarda apenas uma escolha.",
+          "sources": [
+            {
+              "source": "g15",
+              "pages": "3–12 e 80–81",
+              "preview": [
+                80
+              ]
+            },
+            {
+              "source": "prova-grafos2",
+              "pages": "5",
+              "preview": [
+                5
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Reconstrua pela tabela",
+              "kind": "Rastreamento",
+              "prompt": "Origem0; dist=[0,4,1,3,7], pred=[0,2,0,2,3]. Dê caminho e custo até4.",
+              "hint": "Comece no destino e reverta ao final.",
+              "steps": [
+                "Cadeia reversa:4→3→2→0.",
+                "Caminho na ordem da viagem:0→2→3→4.",
+                "Custo=dist[4]=7, sem somar os identificadores."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos · questão 4; prova-grafos2 · questão 8",
+              "id": "ED-073",
+              "topic": "relaxamento",
+              "chapter": "08"
+            },
+            {
+              "title": "Decida o relaxamento",
+              "kind": "Rastreamento",
+              "prompt": "dist[u]=6, dist[v]=12 e w(u,v)=4. Depois, considere outra aresta x→v com dist[x]=3 e peso9. O que muda em cada passo usando melhora estrita?",
+              "hint": "Uma igualdade não troca predecessor nessa convenção.",
+              "steps": [
+                "Via u, candidato6+4=10 é menor que12; dist[v]=10 e pred[v]=u.",
+                "Via x, candidato3+9=12 é maior que10, então nada muda.",
+                "Se o candidato empatasse em10, a regra de melhora estrita também preservaria o predecessor atual."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-074",
+              "topic": "relaxamento",
+              "chapter": "08"
+            },
+            {
+              "title": "O infinito não é um número comum",
+              "kind": "Depuração",
+              "prompt": "Uma implementação usa um inteiro grande como INF e calcula INF+peso, inclusive com peso negativo. Qual cuidado falta?",
+              "hint": "Um vértice inalcançável não deve gerar caminho novo.",
+              "steps": [
+                "Teste primeiro se dist[u] é finita.",
+                "Só então some o peso, usando tipo e limite que não causem overflow.",
+                "Sem esse cuidado, INF−5 pode parecer uma melhora e inventar alcançabilidade."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-075",
+              "topic": "relaxamento",
+              "chapter": "08"
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "dijkstra",
+          "title": "Dijkstra: fechar o menor ainda aberto",
+          "objective": "Rastrear distâncias não negativas e justificar a escolha pela menor estimativa.",
+          "sections": [
+            [
+              "O passo que depende dos pesos",
+              [
+                "Dijkstra escolhe, entre vértices ainda não fechados, aquele de menor estimativa de distância. Com pesos não negativos, nenhuma rota ainda pendente pode produzir uma distância menor para ele. Sua distância se torna definitiva.",
+                "Depois, relaxe as arestas que saem desse vértice. Uma fila de prioridade acelera a escolha do mínimo; ela não remove a exigência de pesos não negativos. Arestas de peso zero são permitidas."
+              ]
+            ],
+            [
+              "A estrutura muda o custo",
+              [
+                "Com matriz e seleção linear do mínimo, o custo é O(V²). Com listas e heap indexado com decrease-key, é O((V+E)log V). Uma implementação com entradas repetidas no heap deve ignorar entradas obsoletas.",
+                "Se a menor estimativa restante for ∞, os demais vértices são inalcançáveis desde a origem. Não tente reconstruir caminhos para eles."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo: 0→1:4,0→2:1,2→1:2,1→3:1,2→3:5",
+            [
+              "Feche0 e obtenha dist=[0,4,1,∞]. Feche2 e melhore1 para3 e3 para6.",
+              "Feche1 e melhore3 para4. Feche3. Distâncias finais=[0,3,1,4], pred=[−1,2,0,1]. A ordem de fechamento foi0,2,1,3."
+            ]
+          ],
+          "invariant": "A distância de todo vértice fechado é mínima, sob a hipótese de pesos não negativos.",
+          "cost": "Matriz O(V²); listas+heap indexado O((V+E)log V); vetores auxiliares O(V).",
+          "caution": "Dijkstra não funciona em geral com arestas negativas, mesmo se não houver ciclo negativo.",
+          "sources": [
+            {
+              "source": "g14",
+              "pages": "9–14 e 41–51",
+              "preview": [
+                14
+              ]
+            },
+            {
+              "source": "g15",
+              "pages": "74–110",
+              "preview": [
+                101
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Uma melhora tardia",
+              "kind": "Rastreamento",
+              "prompt": "Dígrafo não negativo:0→1:7,0→2:2,2→1:1,1→3:3,2→3:9. Execute Dijkstra desde0.",
+              "hint": "A rota via2 melhora a estimativa de1 antes de ele ser fechado.",
+              "steps": [
+                "Após0: d1=7,d2=2. Feche2: d1=3,d3=11.",
+                "Feche1: d3=6. Depois feche3.",
+                "Dist=[0,3,2,6], pred=[−1,2,0,1], ordem0,2,1,3."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-076",
+              "topic": "dijkstra",
+              "chapter": "08"
+            },
+            {
+              "title": "Contraexemplo negativo",
+              "kind": "Contraexemplo",
+              "prompt": "Considere0→1:2,0→2:5,2→1:−4. O que há de errado em fechar1 com distância2?",
+              "hint": "O caminho por2 tem custo5−4.",
+              "steps": [
+                "Dijkstra fecha1 antes de2 e declara sua distância definitiva como2.",
+                "Mais tarde, a rota0→2→1 tem custo1 e contradiz a declaração.",
+                "O grafo é acíclico, mas a aresta negativa já quebra a garantia do algoritmo usual."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-077",
+              "topic": "dijkstra",
+              "chapter": "08"
+            },
+            {
+              "title": "Entrada antiga no heap",
+              "kind": "Depuração",
+              "prompt": "Uma versão insere (distância,vértice) no heap a cada melhora, sem remover a entrada antiga. Retira (7,1) quando dist[1]=3. O que deve fazer?",
+              "hint": "A entrada no heap registra uma estimativa que já deixou de valer.",
+              "steps": [
+                "Reconhecer que7 não é a distância atual3.",
+                "Ignorar essa entrada obsoleta.",
+                "Só processar arestas ao retirar uma estimativa ainda válida evita repetir trabalho e decisões baseadas em dados antigos."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-078",
+              "topic": "dijkstra",
+              "chapter": "08"
+            }
+          ],
+          "code": "para todo v: dist[v] ← ∞; pred[v] ← −1; fechado[v] ← falso\ndist[s] ← 0\nenquanto existe vértice aberto com distância finita:\n    u ← aberto de menor dist (desempate pelo menor identificador)\n    fechado[u] ← verdadeiro\n    para cada aresta u→v de peso w ≥ 0:\n        se não fechado[v] e dist[u]+w < dist[v]:\n            dist[v] ← dist[u]+w\n            pred[v] ← u",
+          "exam": "",
+          "code_language": "Pseudocódigo · contratos descritos no texto"
+        },
+        {
+          "id": "bellman-ford",
+          "title": "Bellman-Ford e ciclos negativos",
+          "objective": "Relaxar todas as arestas e delimitar quando existe uma distância mínima finita.",
+          "sections": [
+            [
+              "O número de arestas de um caminho simples",
+              [
+                "Sem ciclo negativo relevante, um caminho mínimo pode ser escolhido simples e usa no máximo V−1 arestas. Bellman-Ford faz até V−1 passadas de relaxamento sobre todas as arestas.",
+                "Com atualização in-place, uma passada pode propagar melhora por várias arestas, conforme sua ordem. A garantia de V−1 passadas continua válida. Se uma passada não altera nada, é possível parar antes."
+              ]
+            ],
+            [
+              "A passada adicional detecta um problema específico",
+              [
+                "Depois de V−1 passadas, uma melhora adicional em aresta que sai de vértice alcançável indica ciclo negativo alcançável desde s. Repetir esse ciclo reduz o custo sem limite.",
+                "Vértices inalcançáveis desde s não participam desse teste de origem única. Além disso, um ciclo negativo só torna indefinida a distância para destinos que podem ser alcançados a partir dele."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo:0→1:4,0→2:5,1→2:−2",
+            [
+              "Inicialize [0,∞,∞]. Na ordem de arestas dada, uma única passada já produz[0,4,2].",
+              "Nas passadas seguintes, nenhuma distância melhora. O caminho para2 é0→1→2, custo2; a aresta negativa não forma ciclo."
+            ]
+          ],
+          "invariant": "Após k passadas completas, toda rota mínima que pode ser escolhida com até k arestas já pode ser representada pelas estimativas, se não houver ciclo negativo relevante.",
+          "cost": "O(VE) no pior caso com lista de arestas; vetores de dist/pred usam O(V), além da representação do grafo.",
+          "caution": "Ciclo de peso total zero não é ciclo negativo; a desigualdade do relaxamento deve ser estrita.",
+          "sources": [
+            {
+              "source": "g13",
+              "pages": "9–14 e 31–40",
+              "preview": [
+                14
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "A ordem das arestas importa por passada",
+              "kind": "Rastreamento",
+              "prompt": "V=3, origem0. Arestas examinadas nesta ordem:1→2:−2,0→1:4,0→2:5. Dê as distâncias após a primeira e a segunda passadas in-place.",
+              "hint": "Na primeira aresta da primeira passada,1 ainda é inalcançável.",
+              "steps": [
+                "Primeira: não relaxe1→2; depois d1=4 e d2=5. Resultado[0,4,5].",
+                "Segunda:1→2 melhora d2 para2; as outras não mudam. Resultado[0,4,2].",
+                "A mesma resposta final pode exigir mais ou menos passadas conforme a ordem."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-079",
+              "topic": "bellman-ford",
+              "chapter": "08"
+            },
+            {
+              "title": "Ciclo negativo relevante",
+              "kind": "Rastreamento",
+              "prompt": "Arestas0→1:1,1→2:−3,2→1:1. Existe menor distância finita até1? E até um vértice3 isolado?",
+              "hint": "Some os pesos do ciclo1→2→1.",
+              "steps": [
+                "O ciclo custa−2 e é alcançável desde0. Pode ser repetido para baixar indefinidamente o custo até1.",
+                "Não há distância mínima finita até1 nem até2.",
+                "3 continua inalcançável; isso é diferente de ter distância sem limite inferior."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-080",
+              "topic": "bellman-ford",
+              "chapter": "08"
+            },
+            {
+              "title": "Ciclo fora do alcance",
+              "kind": "Justificativa",
+              "prompt": "Origem0 isolada. Em outra componente dirigida há1→2:−2 e2→1:1. Bellman-Ford de origem0 deve denunciar um ciclo negativo alcançável?",
+              "hint": "O teste considera apenas arestas cujo ponto de partida tenha distância finita.",
+              "steps": [
+                "Não há ciclo negativo alcançável desde0.",
+                "As distâncias de1 e2 continuam ∞ e essas arestas não são relaxadas.",
+                "Para detectar qualquer ciclo negativo do grafo, seria preciso uma inicialização global apropriada, como uma superorigem ligada a todos."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-081",
+              "topic": "bellman-ford",
+              "chapter": "08"
+            }
+          ],
+          "code": "dist[s] ← 0; demais distâncias ← ∞; predecessores ← −1\nrepita no máximo V−1 passadas:\n    mudou ← falso\n    para cada aresta (u,v,w), na ordem definida:\n        se dist[u] é finita e dist[u]+w < dist[v]:\n            dist[v] ← dist[u]+w; pred[v] ← u; mudou ← verdadeiro\n    se não mudou: interrompa as passadas\nse alguma aresta ainda permite melhora a partir de origem finita:\n    informe ciclo negativo alcançável desde s",
+          "exam": "",
+          "code_language": "Pseudocódigo · contratos descritos no texto"
+        },
+        {
+          "id": "floyd-warshall",
+          "title": "Floyd-Warshall: todos os pares",
+          "objective": "Atualizar matrizes com intermediários controlados e reconstruir por uma linha de predecessores.",
+          "sections": [
+            [
+              "O índice externo tem significado",
+              [
+                "Inicialize D[i][i]=0 e D[i][j] com o peso da aresta ou ∞; se houver laço negativo, o menor entre0 e seu peso deve ser preservado. Para cada k, permita usar k como intermediário e teste D[i][k]+D[k][j]<D[i][j].",
+                "O laço k fica por fora: ao final da fase k, só os vértices já liberados podem ser intermediários. Trocar a ordem dos laços sem uma justificativa diferente altera a garantia do algoritmo."
+              ]
+            ],
+            [
+              "Predecessor pertence ao destino",
+              [
+                "Defina P[i][j] como o vértice imediatamente anterior a j no caminho de i até j. Em uma melhora via k, faça P[i][j]=P[k][j], não simplesmente k.",
+                "Para reconstruir i→j, mantenha a origem i fixa e siga j,P[i][j],P[i][P[i][j]],… até i. D[i][j]=∞ significa ausência de caminho. D[k][k]<0 após o algoritmo indica ciclo negativo; pares que podem passar por esse ciclo não têm mínimo finito."
+              ]
+            ]
+          ],
+          "example": [
+            "Exemplo:0→1:4,1→2:2,0→2:10,2→0:3",
+            [
+              "A matriz final é D=[[0,4,6],[5,0,2],[3,7,0]]. O custo0→2 melhora para6 via1.",
+              "Para essa melhora, P[0][2] recebe P[1][2]=1. O caminho é0→1→2. Para1→0, a melhora via2 dá custo5."
+            ]
+          ],
+          "invariant": "Ao fim de cada fase, D representa os menores custos com intermediários já permitidos, quando não há ciclo negativo relevante.",
+          "cost": "Tempo O(V³); matrizes de distâncias e predecessores O(V²).",
+          "caution": "A matriz final não é a matriz de pesos originais: uma célula pode representar um caminho com várias arestas.",
+          "sources": [
+            {
+              "source": "g12",
+              "pages": "23–28 e 62–64",
+              "preview": [
+                28,
+                63
+              ]
+            },
+            {
+              "source": "prova-grafos2",
+              "pages": "5–6",
+              "preview": [
+                6
+              ]
+            }
+          ],
+          "exercises": [
+            {
+              "title": "Uma fase e um predecessor",
+              "kind": "Rastreamento",
+              "prompt": "Antes da fase k=1, D[0][2]=9,D[0][1]=3,D[1][2]=4 e P[1][2]=1. Há melhora? Quais ficam D[0][2] e P[0][2]?",
+              "hint": "O candidato é uma soma de distâncias; o predecessor vem da segunda metade do caminho.",
+              "steps": [
+                "Candidato=3+4=7, menor que9.",
+                "D[0][2] passa a7.",
+                "P[0][2] passa a P[1][2]=1."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-082",
+              "topic": "floyd-warshall",
+              "chapter": "08"
+            },
+            {
+              "title": "Leia a linha certa",
+              "kind": "Rastreamento",
+              "prompt": "Na matriz de predecessores, P[0][4]=3,P[0][3]=1,P[0][1]=0. D[0][4]=8. Reconstrua0→4 e explique por que a origem da linha permanece0.",
+              "hint": "Cada consulta ainda descreve um caminho que saiu de0.",
+              "steps": [
+                "Comece4→3→1→0. Inverta para0→1→3→4.",
+                "O custo total é8.",
+                "A linha0 guarda predecessores dos caminhos desde0; trocar a linha durante a recuperação mudaria a pergunta."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos2 · questão 9",
+              "id": "ED-083",
+              "topic": "floyd-warshall",
+              "chapter": "08"
+            },
+            {
+              "title": "Diagonal negativa",
+              "kind": "Justificativa",
+              "prompt": "O resultado tem D[2][2]=−1. Podemos interpretar todas as demais células finitas como distâncias mínimas definitivas?",
+              "hint": "Uma viagem que volta a2 com custo negativo pode ser repetida.",
+              "steps": [
+                "Não. Há um ciclo negativo que permite reduzir custos sem limite para pares que o alcançam e depois chegam ao destino.",
+                "É preciso identificar esses pares antes de anunciar mínimos finitos.",
+                "Pares sem acesso a esse ciclo podem continuar com distâncias mínimas bem definidas."
+              ],
+              "answer_code": "",
+              "exam": "",
+              "id": "ED-084",
+              "topic": "floyd-warshall",
+              "chapter": "08"
+            }
+          ],
+          "code": "inicialize D com os pesos, ausência ∞ e diagonal min(0,peso de laço)\nP[i][j] ← i se há aresta i→j; caso contrário −1\npara k de 0 até V−1:\n    para i de 0 até V−1:\n        para j de 0 até V−1:\n            se D[i][k] e D[k][j] são finitas e sua soma < D[i][j]:\n                D[i][j] ← D[i][k]+D[k][j]\n                P[i][j] ← P[k][j]\nse alguma D[k][k] < 0: há ciclo negativo; qualifique os pares afetados",
+          "exam": "",
+          "code_language": "Pseudocódigo · contratos descritos no texto"
+        }
+      ]
+    },
+    {
+      "id": "09",
+      "title": "Dois simulados e um plano de revisão",
+      "intro": "Faça sem consultar soluções. Depois compare o estado intermediário e a justificativa, não apenas o resultado final. São questões autorais guiadas pelas habilidades das provas fornecidas, sem status de gabarito oficial.",
+      "topics": [
+        {
+          "id": "simulado-estruturas",
+          "title": "Simulado 1 · memória, listas e árvores",
+          "objective": "Resolver uma sequência mista em 60–80 minutos e revisar as transições que causaram dúvida.",
+          "sections": [
+            [
+              "Como usar",
+              [
+                "Separe papel ou use os campos de anotações. Reserve cerca de 12 minutos por questão, com tempo extra para a implementação. Desenhe endereços como caixas e pontas de ponteiros como setas.",
+                "Cada questão vale dois pontos na sua autocorreção: um pelo resultado/código e um pela justificativa, incluindo os casos de fronteira. Ler a solução antes de tentar deve resultar no estado “Revisar”, não em “Resolvi sem ajuda”."
+              ]
+            ]
+          ],
+          "example": [
+            "Roteiro antes de entregar",
+            [
+              "Confira a política de duplicatas, a convenção de altura e o sentido do fator AVL.",
+              "Na exclusão, confirme que nenhuma subárvore foi perdida, o registro foi copiado antes de free e a ligação no chamador foi atualizada."
+            ]
+          ],
+          "invariant": "Cada resposta deve incluir o estado final e os motivos das mudanças.",
+          "cost": "Use as análises por altura e por número de nós dos tópicos anteriores.",
+          "caution": "Os tempos sugeridos são um roteiro de estudo, não uma previsão de formato ou duração da prova.",
+          "sources": [
+            {
+              "source": "prova-listas",
+              "pages": "1–4",
+              "preview": []
+            },
+            {
+              "source": "prova-arvores",
+              "pages": "1–4",
+              "preview": []
+            }
+          ],
+          "exercises": [
+            {
+              "title": "S1.1 · indireção e cópia",
+              "kind": "Simulado",
+              "prompt": "Comece com a=2,b=5; p=&a; q=&p, onde p é int* e q é int**. Execute **q=7; p=&b; **q=9. Dê a,b,*p e o endereço armazenado em *q. Depois explique o efeito de passar p a uma função que apenas reatribui seu parâmetro local.",
+              "hint": "q continua apontando para a variável p, mesmo quando o valor de p muda.",
+              "steps": [
+                "**q=7 muda a para7, pois q leva a p e p leva a a.",
+                "Depois p=&b; **q=9 muda b para9. Resultado a=7,b=9,*p=9,*q=&b.",
+                "Reatribuir um parâmetro int *local não troca p no chamador; seria necessário receber &p por int**."
+              ],
+              "answer_code": "",
+              "exam": "prova-listas · questões 1, 2 e 4",
+              "id": "ED-085",
+              "topic": "simulado-estruturas",
+              "chapter": "09",
+              "points": 2
+            },
+            {
+              "title": "S1.2 · retirar pares sem apagar a cabeça",
+              "kind": "Simulado",
+              "prompt": "Lista dupla circular com nó-cabeça H. NO tem int chave e ponteiros ant,prox. Escreva removePares(H), que remove todos os nós válidos de chave par e retorna a quantidade removida. H nunca é liberado.",
+              "hint": "Guarde o sucessor antes de liberar o nó atual.",
+              "steps": [
+                "Comece em H->prox e pare quando voltar a H.",
+                "Guarde o próximo nó, ajuste os dois vizinhos e libere apenas se a chave for par.",
+                "Retome pelo endereço guardado; ele pode ser H. O código funciona quando todos os dados são removidos."
+              ],
+              "answer_code": "int removePares(NO *H) {\n    int removidos=0;\n    NO *p=H->prox;\n    while (p!=H) {\n        NO *proximo=p->prox;\n        if (p->chave % 2 == 0) {\n            p->ant->prox=p->prox;\n            p->prox->ant=p->ant;\n            free(p); ++removidos;\n        }\n        p=proximo;\n    }\n    return removidos;\n}",
+              "exam": "prova-listas · questão 3",
+              "id": "ED-086",
+              "topic": "simulado-estruturas",
+              "chapter": "09",
+              "points": 2
+            },
+            {
+              "title": "S1.3 · capacidade e volta no vetor",
+              "kind": "Simulado",
+              "prompt": "Fila circular C=4, inicio=3,n=2, ordem lógica [6,8]. Execute insere9, retira, insere5, insere7, retira. A inserção em cheio falha sem alterar estado. Dê saídas e estado final.",
+              "hint": "Registre inicio,n e a ordem lógica após cada passo.",
+              "steps": [
+                "Insere9 em índice1: [6,8,9], n3. Retira6: inicio0,n2,[8,9].",
+                "Insere5 em índice2: [8,9,5],n3. Insere7 em índice3: [8,9,5,7],n4. Nenhuma inserção desta sequência falha.",
+                "A última retirada entrega8 e deixa inicio1,n3,[9,5,7]. Saídas:6 e8."
+              ],
+              "answer_code": "",
+              "exam": "prova-listas · questão 5",
+              "id": "ED-087",
+              "topic": "simulado-estruturas",
+              "chapter": "09",
+              "points": 2
+            },
+            {
+              "title": "S1.4 · remover sem perder um filho",
+              "kind": "Simulado",
+              "prompt": "ABB: raiz50; esquerdo30, direito70; 30 tem filhos20 e40; 40 tem esquerdo35. Exclua50 usando o maior da esquerda. Dê os filhos da nova raiz, o destino de35 e o percurso em ordem.",
+              "hint": "O predecessor40 pode ter um filho esquerdo.",
+              "steps": [
+                "Copie40 para a raiz. O nó original40 é removido.",
+                "Seu filho35 passa a ser filho direito de30. A raiz40 tem esquerdo30 e direito70.",
+                "Percurso em ordem:20,30,35,40,70. O custo da operação é O(h)."
+              ],
+              "answer_code": "",
+              "exam": "prova-arvores · questões 1d e 4",
+              "id": "ED-088",
+              "topic": "simulado-estruturas",
+              "chapter": "09",
+              "points": 2
+            },
+            {
+              "title": "S1.5 · rotação e propriedade",
+              "kind": "Simulado",
+              "prompt": "Insira30,10,20,40,50 em AVL vazia, sem duplicatas. Dê a árvore final e seus fatores b=h(dir)−h(esq). A mesma árvore é heap máximo?",
+              "hint": "Após os três primeiros números ocorre LR; depois examine o excesso que surge à direita.",
+              "steps": [
+                "Após30,10,20: raiz20, esquerdo10, direito30.",
+                "Inserir40 e50 provoca RR no nó30. Resultado:20(10,40(30,50)).",
+                "Fatores: b20=1,b10=0,b40=0,b30=0,b50=0. Não é heap máximo, pois a raiz20 é menor que40."
+              ],
+              "answer_code": "",
+              "exam": "prova-arvores · questões 1, 3 e 5",
+              "id": "ED-089",
+              "topic": "simulado-estruturas",
+              "chapter": "09",
+              "points": 2
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        },
+        {
+          "id": "simulado-grafos",
+          "title": "Simulado 2 · representações e algoritmos",
+          "objective": "Integrar leitura de grafos, implementação e escolha de algoritmo em 70–90 minutos.",
+          "sections": [
+            [
+              "Convenções comuns",
+              [
+                "Vértices são numerados a partir de zero. Em buscas, raízes e vizinhos são percorridos em ordem crescente. Relógio DFS inicia em zero e é incrementado na descoberta e no término.",
+                "Nos algoritmos ponderados, ausência é ∞ e peso zero pode ser válido. Arestas indicadas com travessão são não dirigidas; com seta são dirigidas. As questões são independentes."
+              ]
+            ]
+          ],
+          "example": [
+            "Roteiro de autocorreção",
+            [
+              "Para AGM, confira conexão, ausência de ciclos e V−1 arestas antes de conferir a soma.",
+              "Para caminhos, confira que cada passo da sequência é uma aresta válida e que o custo coincide com a distância anunciada."
+            ]
+          ],
+          "invariant": "Representação, direção, origem e desempates são fixados antes do rastreamento.",
+          "cost": "Declare se usa matriz ou lista ao dar a complexidade.",
+          "caution": "Diferentes versões dos exemplos de prova usam pesos diferentes em grafos parecidos. Leia os dados da questão atual.",
+          "sources": [
+            {
+              "source": "prova-grafos",
+              "pages": "1–6",
+              "preview": []
+            },
+            {
+              "source": "prova-grafos2",
+              "pages": "1–7",
+              "preview": []
+            }
+          ],
+          "exercises": [
+            {
+              "title": "S2.1 · vizinhança a distância até dois",
+              "kind": "Simulado",
+              "prompt": "Grafo simples não dirigido sem laços em bool **A, com V vértices e u válido. Implemente contaAte2(A,V,u), que conta vértices a uma ou duas arestas de u, sem repetição e excluindo u. Devolva −1 se a alocação auxiliar falhar.",
+              "hint": "Marque os vizinhos diretos e os vizinhos de cada vizinho em um vetor booleano.",
+              "steps": [
+                "Reserve V marcas zeradas. Percorra cada vizinho v de u.",
+                "Marque v e todos os seus vizinhos w. A marca evita contar um mesmo destino duas vezes.",
+                "Remova a marca de u, some as demais e libere o vetor. O pior tempo é O(V²), espaço O(V)."
+              ],
+              "answer_code": "int contaAte2(bool **A, int V, int u) {\n    bool *marca=calloc(V,sizeof *marca);\n    if (!marca) return -1;\n    for (int v=0; v<V; ++v) if (A[u][v]) {\n        marca[v]=true;\n        for (int w=0; w<V; ++w)\n            if (A[v][w]) marca[w]=true;\n    }\n    marca[u]=false;\n    int total=0;\n    for (int v=0; v<V; ++v) total+=marca[v] ? 1 : 0;\n    free(marca);\n    return total;\n}",
+              "exam": "prova-grafos · questão 3b",
+              "id": "ED-090",
+              "topic": "simulado-grafos",
+              "chapter": "09",
+              "points": 2
+            },
+            {
+              "title": "S2.2 · duas buscas, um vértice isolado",
+              "kind": "Simulado",
+              "prompt": "Não dirigido com V=5 e arestas0–1,0–2,1–3,2–3; vértice4 isolado. Dê BFS desde0 (ordem, distâncias) e DFS completa (d,f,pais).",
+              "hint": "BFS desde0 não reinicia em4; a DFS completa reinicia.",
+              "steps": [
+                "BFS: ordem[0,1,2,3], dist=[0,1,1,2,−1].",
+                "DFS: ordem de descoberta0,1,3,2,4. d=[1,2,4,3,9], f=[8,7,5,6,10].",
+                "Pais DFS=[−1,0,3,1,−1]. As duas raízes da floresta refletem as duas componentes não dirigidas."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos2 · questões 5 e 6",
+              "id": "ED-091",
+              "topic": "simulado-grafos",
+              "chapter": "09",
+              "points": 2
+            },
+            {
+              "title": "S2.3 · prove a escolha da árvore",
+              "kind": "Simulado",
+              "prompt": "Grafo não dirigido conexo:0–1:2,0–2:6,1–2:3,1–3:5,2–3:1,2–4:7,3–4:4. Execute Kruskal, dê uma AGM e sua soma; depois descreva a ordem de arestas de Prim desde0.",
+              "hint": "Kruskal examina globalmente por peso; Prim usa a fronteira da árvore corrente.",
+              "steps": [
+                "Kruskal aceita2–3:1,0–1:2,1–2:3,3–4:4. São quatro arestas e cinco vértices, custo10.",
+                "Prim desde0 escolhe0–1:2,1–2:3,2–3:1,3–4:4.",
+                "As ordens diferem, mas o conjunto e a soma são iguais aqui. A AGM usa V−1 arestas e é acíclica."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos · questão 2; prova-grafos2 · questão 4",
+              "id": "ED-092",
+              "topic": "simulado-grafos",
+              "chapter": "09",
+              "points": 2
+            },
+            {
+              "title": "S2.4 · distâncias e condições",
+              "kind": "Simulado",
+              "prompt": "Dígrafo0→1:4,0→2:1,2→1:2,1→3:1,2→3:5; vértice4 isolado. Execute Dijkstra desde0 e reconstrua até3. Depois explique o que muda na escolha de algoritmo se2→1 tiver peso−2.",
+              "hint": "Dijkstra exige não negatividade mesmo quando um caso particular possa produzir um resultado certo.",
+              "steps": [
+                "Com os pesos originais, dist=[0,3,1,4,∞], pred=[−1,2,0,1,−1].",
+                "Caminho até3:0→2→1→3, custo4. Não há caminho até4.",
+                "Com peso−2, a garantia de Dijkstra deixa de valer. Bellman-Ford é adequado; neste grafo acíclico também se pode relaxar em ordem topológica."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos · questões 4 e 6",
+              "id": "ED-093",
+              "topic": "simulado-grafos",
+              "chapter": "09",
+              "points": 2
+            },
+            {
+              "title": "S2.5 · leia todos os pares",
+              "kind": "Simulado",
+              "prompt": "Floyd-Warshall retornou D=[[0,4,6],[5,0,2],[3,7,0]], com P[0][2]=1,P[0][1]=0,P[1][0]=2,P[1][2]=1. Dê0→2 e1→0, seus custos e diga se o grafo é fortemente conexo. Qual o maior custo mínimo entre vértices distintos?",
+              "hint": "A linha da origem permanece fixa ao reconstruir.",
+              "steps": [
+                "0→2: cadeia reversa2,1,0; caminho0→1→2, custo6.",
+                "1→0: cadeia reversa0,2,1; caminho1→2→0, custo5.",
+                "Todas as distâncias são finitas, logo há caminho para cada par ordenado e o grafo é fortemente conexo. O maior custo mínimo fora da diagonal é7, de2 para1."
+              ],
+              "answer_code": "",
+              "exam": "prova-grafos2 · questão 9",
+              "id": "ED-094",
+              "topic": "simulado-grafos",
+              "chapter": "09",
+              "points": 2
+            }
+          ],
+          "code": "",
+          "exam": "",
+          "code_language": "C (trecho de referência)"
+        }
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "lineares",
+      "title": "SIN5013 · Listas, pilhas e filas",
+      "path": "fontes/estruturas-de-dados/15-estruturasLineares.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/15-estruturasLineares.pdf",
+      "pages": 114,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        4,
+        19,
+        40,
+        56,
+        77,
+        87,
+        113
+      ]
+    },
+    {
+      "id": "arvores",
+      "title": "SIN5013 · Árvores e ABB",
+      "path": "fontes/estruturas-de-dados/16-arvores.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/16-arvores.pdf",
+      "pages": 72,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        7,
+        19,
+        29,
+        47,
+        68
+      ]
+    },
+    {
+      "id": "avl",
+      "title": "SIN5013 · Árvores AVL",
+      "path": "fontes/estruturas-de-dados/16-arvoresAVL.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/16-arvoresAVL.pdf",
+      "pages": 78,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        5,
+        21,
+        31,
+        41,
+        58,
+        75
+      ]
+    },
+    {
+      "id": "g02",
+      "title": "ACH2024 · Aula 02 · Conceitos de grafos",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula02.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula02.pdf",
+      "pages": 95,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        25,
+        45
+      ]
+    },
+    {
+      "id": "g03",
+      "title": "ACH2024 · Aula 03 · Matriz de adjacências",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula03.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula03.pdf",
+      "pages": 124,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        103
+      ]
+    },
+    {
+      "id": "g04",
+      "title": "ACH2024 · Aula 04 · Matriz com pesos",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula04.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula04.pdf",
+      "pages": 110,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        17
+      ]
+    },
+    {
+      "id": "g05",
+      "title": "ACH2024 · Aula 05 · Listas de adjacências",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula05.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula05.pdf",
+      "pages": 136,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        9
+      ]
+    },
+    {
+      "id": "g06",
+      "title": "ACH2024 · Aula 06 · Busca em profundidade",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula06.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula06.pdf",
+      "pages": 127,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        27
+      ]
+    },
+    {
+      "id": "g07",
+      "title": "ACH2024 · Aula 07 · Aplicações de DFS",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula07.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula07.pdf",
+      "pages": 66,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        2
+      ]
+    },
+    {
+      "id": "g08",
+      "title": "ACH2024 · Aula 08 · Busca em largura",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula08.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula08.pdf",
+      "pages": 85,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        53
+      ]
+    },
+    {
+      "id": "g09",
+      "title": "ACH2024 · Aula 09 · Fila de prioridade",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula09.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula09.pdf",
+      "pages": 57,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        32,
+        56
+      ]
+    },
+    {
+      "id": "g10",
+      "title": "ACH2024 · Aula 10 · Prim",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula10.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula10.pdf",
+      "pages": 55,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        11
+      ]
+    },
+    {
+      "id": "g11",
+      "title": "ACH2024 · Aula 11 · Kruskal",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula11.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula11.pdf",
+      "pages": 78,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        5,
+        25
+      ]
+    },
+    {
+      "id": "g12",
+      "title": "ACH2024 · Aula 12 · Floyd-Warshall",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula12.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula12.pdf",
+      "pages": 65,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        28,
+        63
+      ]
+    },
+    {
+      "id": "g13",
+      "title": "ACH2024 · Aula 13 · Bellman-Ford",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula13.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula13.pdf",
+      "pages": 41,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        14
+      ]
+    },
+    {
+      "id": "g14",
+      "title": "ACH2024 · Aula 14 · Dijkstra",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula14.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula14.pdf",
+      "pages": 52,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        14
+      ]
+    },
+    {
+      "id": "g15",
+      "title": "ACH2024 · Aula 15 · Dijkstra e filas de prioridade",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula15.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula15.pdf",
+      "pages": 112,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        80,
+        101
+      ]
+    },
+    {
+      "id": "g07b",
+      "title": "ACH2024 · Aula 07 · Continuação: topologia e componentes",
+      "path": "fontes/estruturas-de-dados/ACH2024-aula07cont.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/aula07cont.pdf",
+      "pages": 93,
+      "kind": "aula",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        65,
+        91
+      ]
+    },
+    {
+      "id": "prova-listas",
+      "title": "ACH2023 · Prova 1 · 2018 · Turma 94",
+      "path": "fontes/estruturas-de-dados/ACH2023_prova1_2018.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/ACH2023_prova1_2018.pdf",
+      "pages": 4,
+      "kind": "prova",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "prova-arvores",
+      "title": "ACH2023 · Prova 2 · 2016 · Árvores",
+      "path": "fontes/estruturas-de-dados/ExemploDeProvaArvores.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/ExemploDeProvaArvores.pdf",
+      "pages": 4,
+      "kind": "prova",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        1,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "prova-grafos",
+      "title": "SIN5013 · Exemplos de questões · Grafos",
+      "path": "fontes/estruturas-de-dados/ExemploDeQuestoes_Grafo.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/ExemploDeQuestoes_Grafo.pdf",
+      "pages": 6,
+      "kind": "prova",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        1
+      ]
+    },
+    {
+      "id": "prova-grafos2",
+      "title": "ACH2024 · Exemplo de Prova 1",
+      "path": "fontes/estruturas-de-dados/ACH2024-Prova1_Exemplo.pdf",
+      "url": "https://www.each.usp.br/digiampietri/ACH2024/Prova1_Exemplo.pdf",
+      "pages": 7,
+      "kind": "prova",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": [
+        2,
+        5,
+        6
+      ]
+    },
+    {
+      "id": "apoio-grafos",
+      "title": "SIN5013 · Grafos (material complementar)",
+      "path": "fontes/estruturas-de-dados/17-grafos.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/17-grafos.pdf",
+      "pages": 216,
+      "kind": "apoio",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": []
+    },
+    {
+      "id": "apoio-dijkstra",
+      "title": "SIN5013 · Dijkstra (material complementar)",
+      "path": "fontes/estruturas-de-dados/AlgoritmoDeDijkstra.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/AlgoritmoDeDijkstra.pdf",
+      "pages": 117,
+      "kind": "apoio",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": []
+    },
+    {
+      "id": "apoio-codigo",
+      "title": "SIN5013 · Algumas implementações",
+      "path": "fontes/estruturas-de-dados/AlgumasImplementacoes.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/AlgumasImplementacoes.pdf",
+      "pages": 10,
+      "kind": "apoio",
+      "author": "Luciano Antonio Digiampietri",
+      "preview_pages": []
+    },
+    {
+      "id": "apostila",
+      "title": "ACH2023 · Apostila de apoio",
+      "path": "fontes/estruturas-de-dados/ACH2023.pdf",
+      "url": "https://www.each.usp.br/digiampietri/SIN5013/ACH2023.pdf",
+      "pages": 55,
+      "kind": "apoio",
+      "author": "Willian Yukio Honda e Ivandré Paraboni",
+      "preview_pages": []
+    }
+  ]
+}

@@ -26,3 +26,8 @@ São oito arquivos, 274 páginas. Aulas não fornecidas não integram este escop
 As explicações, exercícios adicionais, resoluções e ferramentas foram elaborados para este caderno.
 Erratas e hipóteses adotadas estão explicitadas nos tópicos e na seção Referência.
 Cobertura de conteúdo não equivale a garantia automática de aprendizagem.
+
+
+PARTE 2 - ESTRUTURAS DE DADOS
+Abra SIN5013-estruturas-de-dados.html. Teoria, exercícios, laboratórios e prévias selecionadas funcionam no arquivo HTML isolado. Para consultar os PDFs completos offline, mantenha fontes/estruturas-de-dados/ ao lado dele. A página index.html permite escolher entre as duas partes.
+O padrão editorial e as instruções de manutenção estão em docs/PADRAO-CADERNOS.md.

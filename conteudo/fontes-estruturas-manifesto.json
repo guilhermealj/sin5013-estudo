@@ -1,0 +1,184 @@
+[
+  {
+    "id": "lineares",
+    "path": "fontes/estruturas-de-dados/15-estruturasLineares.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/15-estruturasLineares.pdf",
+    "pages": 114,
+    "sha256": "cd792b54bb405081badf9cb3f52019239a44d5a1a46d0a8700a5c26f1ae990e1"
+  },
+  {
+    "id": "arvores",
+    "path": "fontes/estruturas-de-dados/16-arvores.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/16-arvores.pdf",
+    "pages": 72,
+    "sha256": "b8e581e282bd038e7746b119a7d9722e364dee7f81d0772afb9705b0d3269370"
+  },
+  {
+    "id": "avl",
+    "path": "fontes/estruturas-de-dados/16-arvoresAVL.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/16-arvoresAVL.pdf",
+    "pages": 78,
+    "sha256": "ab1d5ae48fbe7849b6b43838835d69398fde4418adf8b7aa36a26912b5050cf8"
+  },
+  {
+    "id": "g02",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula02.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula02.pdf",
+    "pages": 95,
+    "sha256": "c45e9ee771ad3833127db172af31a13fa90fa7c789b3be1889ca41f10846016f"
+  },
+  {
+    "id": "g03",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula03.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula03.pdf",
+    "pages": 124,
+    "sha256": "9e9561869995e1595f8c0f1860ce2ddab89638b4bcd1f6c3e2abc1f239882843"
+  },
+  {
+    "id": "g04",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula04.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula04.pdf",
+    "pages": 110,
+    "sha256": "b42c5eab961a093123e8e41c929d1da164c5a94d94370ee737558c4465af1fff"
+  },
+  {
+    "id": "g05",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula05.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula05.pdf",
+    "pages": 136,
+    "sha256": "839c26035f8d1adae03c91931b2993b9f04a314ad668bbcc5c14a8c8ea8c12fb"
+  },
+  {
+    "id": "g06",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula06.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula06.pdf",
+    "pages": 127,
+    "sha256": "ccaa7f942067880d9b3f818fc88acccd0ca12752494a467b7a2463a1a387be07"
+  },
+  {
+    "id": "g07",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula07.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula07.pdf",
+    "pages": 66,
+    "sha256": "1261ee199e8919be8717de9717172eacc50075f8a52c7c9fc145d5b240261546"
+  },
+  {
+    "id": "g08",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula08.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula08.pdf",
+    "pages": 85,
+    "sha256": "0eb5ad79f96c9d920b53648aeec95b9758c5e525a3646ee8aaeb948309e99d4f"
+  },
+  {
+    "id": "g09",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula09.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula09.pdf",
+    "pages": 57,
+    "sha256": "51a379c0faf74936386085a3bdaff8ed9959c3b7ca7ad7c1a2376aff9fe50684"
+  },
+  {
+    "id": "g10",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula10.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula10.pdf",
+    "pages": 55,
+    "sha256": "05e55a18eac1077dea4e5cc1fd6e616b8027224ff81396a839600a6e02c25bcd"
+  },
+  {
+    "id": "g11",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula11.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula11.pdf",
+    "pages": 78,
+    "sha256": "1f6a22d917fb8e091cb635fed114add2c26468117d09ef415d8b98abab568609"
+  },
+  {
+    "id": "g12",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula12.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula12.pdf",
+    "pages": 65,
+    "sha256": "33a451ecbd73f33e05959581097edd975662b74abc2218139c041f7279a2b9a4"
+  },
+  {
+    "id": "g13",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula13.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula13.pdf",
+    "pages": 41,
+    "sha256": "e441a84463e472fe12001caa6229794d9dc6f76e9557fcc08127765f95f6f74f"
+  },
+  {
+    "id": "g14",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula14.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula14.pdf",
+    "pages": 52,
+    "sha256": "c3e975792a321c7a0553f451825365c22ab2fdd5f0721be9660f1b4e79b0b139"
+  },
+  {
+    "id": "g15",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula15.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula15.pdf",
+    "pages": 112,
+    "sha256": "50f411ceccd6a5d2d6af947b71dc3c1ab19d749ad45fe3ea3d0c7549903c6442"
+  },
+  {
+    "id": "g07b",
+    "path": "fontes/estruturas-de-dados/ACH2024-aula07cont.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/aula07cont.pdf",
+    "pages": 93,
+    "sha256": "71f6a626f3b5059c522397159efa1f8326fb5e868fca2a491338cae0605541b1"
+  },
+  {
+    "id": "prova-listas",
+    "path": "fontes/estruturas-de-dados/ACH2023_prova1_2018.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/ACH2023_prova1_2018.pdf",
+    "pages": 4,
+    "sha256": "0d51bf31ca515445e30eacf68948e4d3f9220195a8f3da40e77b6d90a6a6f3f8"
+  },
+  {
+    "id": "prova-arvores",
+    "path": "fontes/estruturas-de-dados/ExemploDeProvaArvores.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/ExemploDeProvaArvores.pdf",
+    "pages": 4,
+    "sha256": "3bdc066ef8698580c6d54c6f8063063bf6e1d6f3ff52cd71d0219d49d6b787e0"
+  },
+  {
+    "id": "prova-grafos",
+    "path": "fontes/estruturas-de-dados/ExemploDeQuestoes_Grafo.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/ExemploDeQuestoes_Grafo.pdf",
+    "pages": 6,
+    "sha256": "0670ff8b941040bd6141201635f0f38c8913c6c7d5605baeccf00a0535dcb280"
+  },
+  {
+    "id": "prova-grafos2",
+    "path": "fontes/estruturas-de-dados/ACH2024-Prova1_Exemplo.pdf",
+    "url": "https://www.each.usp.br/digiampietri/ACH2024/Prova1_Exemplo.pdf",
+    "pages": 7,
+    "sha256": "a6767ca306ff7968e9091b99e2a20b687332e25a86eb946d961fc29514ddc233"
+  },
+  {
+    "id": "apoio-grafos",
+    "path": "fontes/estruturas-de-dados/17-grafos.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/17-grafos.pdf",
+    "pages": 216,
+    "sha256": "ba43f1877aeaee4252c166937dfd404e536b80d7198b692f569b1efb545f26e6"
+  },
+  {
+    "id": "apoio-dijkstra",
+    "path": "fontes/estruturas-de-dados/AlgoritmoDeDijkstra.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/AlgoritmoDeDijkstra.pdf",
+    "pages": 117,
+    "sha256": "3ea0df7167bbcc0d9cd3c623efdaf19e409fcd32e950c6aced7379bdf64f38a7"
+  },
+  {
+    "id": "apoio-codigo",
+    "path": "fontes/estruturas-de-dados/AlgumasImplementacoes.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/AlgumasImplementacoes.pdf",
+    "pages": 10,
+    "sha256": "0b0cbdaa235ef6cf214d074ce02b9e946c4c90df5d33281716d8918a62e72c36"
+  },
+  {
+    "id": "apostila",
+    "path": "fontes/estruturas-de-dados/ACH2023.pdf",
+    "url": "https://www.each.usp.br/digiampietri/SIN5013/ACH2023.pdf",
+    "pages": 55,
+    "sha256": "021538af227d612faea049ab22056a4721c494bdbd055849cb87783b8c4f5043"
+  }
+]
